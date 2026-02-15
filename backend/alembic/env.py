@@ -2,6 +2,8 @@
 Alembic environment configuration for async migrations.
 """
 import asyncio
+import sys
+from pathlib import Path
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -9,6 +11,9 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+
+# Add the backend directory to Python path so we can import 'app'
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Import your Base and settings
 from app.db.base import Base
