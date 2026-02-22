@@ -14,7 +14,11 @@ class Base(DeclarativeBase):
 
 
 # Import all models here so Alembic can discover them
-# We'll add these imports as we create the models
-from app.db.models.provider import Provider  # noqa: E402, F401
-from app.db.models.webhook_event import WebhookEvent  # noqa: E402, F401
-from app.db.models.security_log import SecurityLog  # noqa: E402, F401
+# These imports are done at the end to avoid circular imports
+def _import_models():
+    """Import all models for Alembic discovery."""
+    from app.db.models import provider  # noqa: F401
+    from app.db.models import webhook_event  # noqa: F401
+    from app.db.models import security_log  # noqa: F401
+
+_import_models()

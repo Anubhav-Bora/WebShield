@@ -8,6 +8,8 @@ import redis.asyncio as redis
 
 from app.core.config import settings
 from app.db.session import engine
+from app.api.routes.webhook import router as webhooks_router
+from app.api.routes.admin import router as admin_router
 
 redis_client: redis.Redis = None
 
@@ -66,6 +68,20 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Include webhook routes
+app.include_router(
+    webhooks_router,
+    prefix="/webhooks",
+    tags=["Webhooks"]
+)
+
+# Include admin routes
+app.include_router(
+    admin_router,
+    prefix="/admin",
+    tags=["Admin"]
 )
 
 @app.get("/health", tags=["Health"])
