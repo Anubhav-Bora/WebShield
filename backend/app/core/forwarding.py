@@ -47,15 +47,18 @@ async def forward_webhook(
                 if 200 <= response.status_code < 300:
                     # Update database
                     webhook_event.forwarded = True
-                    webhook_event.forwarding_status_code = response.status_code
-                    webhook_event.processed_at = datetime.utcnow()
+                    webhook_event.response_status = response.status_code
+                    webhook_event.response_body = response.text
+                    webhook_event.forwarded_at = datetime.utcnow()
                     await db.commit()
                     return True
                 
                 # If 4xx error, don't retry (client error)
                 if 400 <= response.status_code < 500:
-                    webhook_event.forwarding_status_code = response.status_code
+                    webhook_event.response_status = response.status_code
+                    webhook_event.response_body = response.text
                     webhook_event.error_message = f"Client error: {response.text}"
+                    webhook_event.forwarded_at = datetime.utcnow()
                     await db.commit()
                     return False
                 
@@ -68,7 +71,7 @@ async def forward_webhook(
             
             # If last attempt, save error and return
             if attempt == max_retries - 1:
-                webhook_event.processed_at = datetime.utcnow()
+                webhook_event.forwarded_at = datetime.utcnow()
                 await db.commit()
                 return False
     

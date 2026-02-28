@@ -3,6 +3,8 @@ Pydantic schemas for webhook requests and responses.
 """
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
+from datetime import datetime
+from uuid import UUID
 
 
 class WebhookRequest(BaseModel):
@@ -41,3 +43,21 @@ class WebhookResponse(BaseModel):
                 "webhook_id": "123e4567-e89b-12d3-a456-426614174000"
             }
         }
+
+
+class WebhookEventResponse(BaseModel):
+    """Response schema for webhook events."""
+    id: UUID = Field(..., description="Webhook event ID")
+    provider_id: UUID = Field(..., description="Provider ID")
+    request_id: str = Field(..., description="Request ID for deduplication")
+    payload: Dict[str, Any] = Field(..., description="Webhook payload")
+    headers: Dict[str, str] = Field(..., description="Request headers")
+    signature_valid: bool = Field(..., description="Whether signature was valid")
+    forwarded: bool = Field(..., description="Whether webhook was forwarded")
+    received_at: datetime = Field(..., description="When webhook was received")
+    forwarded_at: Optional[datetime] = Field(None, description="When webhook was forwarded")
+    response_status: Optional[int] = Field(None, description="HTTP response status from forwarding")
+    response_body: Optional[str] = Field(None, description="HTTP response body from forwarding")
+    
+    class Config:
+        from_attributes = True

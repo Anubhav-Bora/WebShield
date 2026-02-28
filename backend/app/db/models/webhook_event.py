@@ -79,10 +79,17 @@ class WebhookEvent(Base):
     )
     
     # HTTP status code from internal service (if forwarded)
-    forwarding_status_code: Mapped[int | None] = mapped_column(
+    response_status: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
         comment="HTTP status code from forwarding attempt"
+    )
+    
+    # Response body from internal service
+    response_body: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="HTTP response body from forwarding attempt"
     )
     
     # Error message if something went wrong
@@ -101,10 +108,10 @@ class WebhookEvent(Base):
         comment="When webhook was received"
     )
     
-    processed_at: Mapped[datetime | None] = mapped_column(
+    forwarded_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
-        comment="When webhook processing completed"
+        comment="When webhook was forwarded"
     )
     
     # Relationship to provider (optional, for easier querying)
