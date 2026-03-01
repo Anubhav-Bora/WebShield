@@ -5,11 +5,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import redis.asyncio as redis
+import logging
 
-from app.core.config import settings
+from app.core.config import settings, setup_logging
 from app.db.session import engine
 from app.api.routes.webhook import router as webhooks_router
 from app.api.routes.admin import router as admin_router
+
+# Setup logging
+setup_logging()
+logger = logging.getLogger(__name__)
 
 redis_client: redis.Redis = None
 
@@ -22,35 +27,49 @@ async def lifespan(app: FastAPI):
     Runs when the application starts and stops.
     """
     # Startup
-    print(" Starting Webhook Gateway...")
+    logger.info("🚀 Starting Webhook Gateway...")
     
     # Initialize Redis connection
     global redis_client
-    redis_client = redis.from_url(
-        settings.REDIS_URL,
-        encoding="utf-8",
-        decode_responses=True
-    )
-    print("Redis connected")
+    try:
+        redis_client = redis.from_url(
+            settings.REDIS_URL,
+            encoding="utf-8",
+            decode_responses=True
+        )
+        logger.info("✓ Redis connected successfully")
+    except Exception as e:
+        logger.error(f"✗ Redis connection failed: {e}")
+        raise
     
     # Test database connection
-    async with engine.begin() as conn:
-        print(" Database connected")
+    try:
+        async with engine.begin() as conn:
+            logger.info("✓ Database connected successfully")
+    except Exception as e:
+        logger.error(f"✗ Database connection failed: {e}")
+        raise
     
-    print("Webhook Gateway is ready!")
+    logger.info("✅ Webhook Gateway is ready!")
     
     yield  # Application runs here
     
     # Shutdown
-    print(" Shutting down Webhook Gateway...")
+    logger.info("🔴 Shutting down Webhook Gateway...")
     
     # Close Redis connection
-    await redis_client.close()
-    print(" Redis connection closed")
+    try:
+        await redis_client.close()
+        logger.info("✓ Redis connection closed")
+    except Exception as e:
+        logger.error(f"✗ Error closing Redis: {e}")
     
     # Close database connections
-    await engine.dispose()
-    print(" Database connections closed")
+    try:
+        await engine.dispose()
+        logger.info("✓ Database connections closed")
+    except Exception as e:
+        logger.error(f"✗ Error closing database: {e}")
 
 
 # Create FastAPI app
@@ -92,7 +111,8 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "webhook-gateway",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "environment": settings.ENVIRONMENT
     }
 
 @app.get("/", tags=["Root"])

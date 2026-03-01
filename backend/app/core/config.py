@@ -5,6 +5,8 @@ Loads configuration from environment variables with type validation.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
+import logging
+from functools import lru_cache
 
 
 class Settings(BaseSettings):
@@ -14,6 +16,11 @@ class Settings(BaseSettings):
     Create a .env file in the backend directory with these values.
     See .env.example for reference.
     """
+    
+    # Environment
+    ENVIRONMENT: str = 'development'
+    DEBUG: bool = True
+    LOG_LEVEL: str = 'INFO'
     
     # Database
     DATABASE_URL: str
@@ -51,5 +58,29 @@ class Settings(BaseSettings):
     )
 
 
+@lru_cache()
+def get_settings() -> Settings:
+    """Get cached settings instance."""
+    return Settings()
+
+
 # Global settings instance
-settings = Settings()
+settings = get_settings()
+
+
+def setup_logging() -> None:
+    """Configure application logging."""
+    log_level = getattr(logging, settings.LOG_LEVEL, logging.INFO)
+    
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(),
+        ]
+    )
+    
+    # Reduce verbosity of third-party loggers
+    logging.getLogger('uvicorn').setLevel(logging.WARNING)
+    logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
+

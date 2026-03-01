@@ -1,7 +1,7 @@
 """
 Pydantic schemas for webhook requests and responses.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Dict, Any
 from datetime import datetime
 from uuid import UUID
@@ -17,14 +17,15 @@ class WebhookRequest(BaseModel):
     data: Dict[str, Any] = Field(..., description="Event data")
     timestamp: Optional[str] = Field(None, description="Event timestamp")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "event_type": "payment.succeeded",
                 "data": {"amount": 100, "currency": "USD"},
                 "timestamp": "2025-02-22T10:30:00Z"
             }
         }
+    )
 
 
 class WebhookResponse(BaseModel):
@@ -35,14 +36,15 @@ class WebhookResponse(BaseModel):
     message: str = Field(..., description="Status message")
     webhook_id: Optional[str] = Field(None, description="ID of stored webhook event")
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "status": "accepted",
                 "message": "Webhook received and queued for processing",
                 "webhook_id": "123e4567-e89b-12d3-a456-426614174000"
             }
         }
+    )
 
 
 class WebhookEventResponse(BaseModel):
@@ -59,5 +61,4 @@ class WebhookEventResponse(BaseModel):
     response_status: Optional[int] = Field(None, description="HTTP response status from forwarding")
     response_body: Optional[str] = Field(None, description="HTTP response body from forwarding")
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

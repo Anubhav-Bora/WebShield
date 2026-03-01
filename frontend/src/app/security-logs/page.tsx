@@ -3,61 +3,52 @@
 import React from 'react'
 import { useSecurityLogs } from '@/hooks/useSecurityLogs'
 import { formatDateTime, formatEventType, formatIPAddress } from '@/utils/formatters'
+import { DataTable } from '@/components/ui/DataTable'
+import DashboardLayout from '@/components/layout/DashboardLayout'
+import gsap from 'gsap'
 
 export default function SecurityLogsPage() {
     const { data: logs, isLoading, error } = useSecurityLogs()
 
+    React.useEffect(() => {
+        gsap.from('.page-header', { opacity: 0, x: -20, duration: 0.5, ease: 'power2.out' })
+    }, [])
+
+    const columns = [
+        {
+            key: 'event_type', title: 'Event Type', render: (l: any) => (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                    {formatEventType(l.event_type)}
+                </span>
+            )
+        },
+        { key: 'provider_name', title: 'Provider', render: (l: any) => <span className="text-white font-medium">{l.provider_name}</span> },
+        { key: 'ip_address', title: 'Client IP', render: (l: any) => <span className="font-mono text-cyan-400 text-sm">{formatIPAddress(l.ip_address, true)}</span> },
+        { key: 'request_id', title: 'Request ID', render: (l: any) => <span className="font-mono text-slate-400 text-xs truncate max-w-[150px] inline-block">{l.request_id || 'N/A'}</span> },
+        { key: 'created_at', title: 'Created At', render: (l: any) => <span className="text-slate-300">{formatDateTime(l.created_at)}</span> }
+    ]
+
     return (
-        <main className="min-h-screen bg-slate-900 p-8">
+        <DashboardLayout>
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">Security Logs</h1>
-                    <p className="text-slate-400">Monitor security events and threats</p>
+                <div className="mb-8 page-header">
+                    <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 mb-2">Security Logs</h1>
+                    <p className="text-slate-400 text-lg">Monitor security events and threats</p>
                 </div>
 
-                {/* Logs Table */}
-                <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
-                    {isLoading ? (
-                        <div className="p-8 text-center text-slate-400">Loading security logs...</div>
-                    ) : error ? (
-                        <div className="p-8 text-center text-red-400">Error loading security logs</div>
-                    ) : logs && logs.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-slate-700 border-b border-slate-600">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold text-white">Event Type</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold text-white">Provider</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold text-white">Client IP</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold text-white">Request ID</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold text-white">Created At</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-700">
-                                    {logs.map((log: any) => (
-                                        <tr key={log.id} className="hover:bg-slate-700 transition">
-                                            <td className="px-6 py-4">
-                                                <span className="px-3 py-1 rounded text-sm font-semibold bg-red-900 text-red-200">
-                                                    {formatEventType(log.event_type)}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-white font-semibold">{log.provider_name}</td>
-                                            <td className="px-6 py-4 text-slate-300 text-sm font-mono">{formatIPAddress(log.ip_address, true)}</td>
-                                            <td className="px-6 py-4 text-slate-300 text-sm font-mono truncate">{log.request_id || 'N/A'}</td>
-                                            <td className="px-6 py-4 text-slate-300 text-sm">{formatDateTime(log.created_at)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : (
-                        <div className="p-8 text-center text-slate-400">
-                            <p>No security events found</p>
-                        </div>
-                    )}
-                </div>
+                {isLoading ? (
+                    <div className="p-8 text-center text-slate-400 animate-pulse">Loading security logs...</div>
+                ) : error ? (
+                    <div className="p-8 text-center text-rose-400">Error loading security logs</div>
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={logs || []}
+                        delay={0.2}
+                    />
+                )}
             </div>
-        </main>
+        </DashboardLayout>
     )
 }
+

@@ -185,26 +185,8 @@ async def list_webhooks(
     
     stmt = stmt.order_by(WebhookEvent.received_at.desc()).limit(limit).offset(offset)
     result = await db.execute(stmt)
-    return result.scalars().all()
-
-
-@router.get("/webhooks/{webhook_id}", response_model=WebhookEventResponse)
-async def get_webhook(
-    webhook_id: str,
-    db: AsyncSession = Depends(get_db)
-):
-    """Get webhook event details."""
-    stmt = select(WebhookEvent).where(WebhookEvent.id == webhook_id)
-    result = await db.execute(stmt)
-    webhook = result.scalars().first()
-    
-    if not webhook:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Webhook '{webhook_id}' not found"
-        )
-    
-    return webhook
+    webhooks = result.scalars().all()
+    return [WebhookEventResponse.from_orm(w) for w in webhooks]
 
 
 @router.get("/webhooks/stats")
@@ -232,7 +214,7 @@ async def get_webhook_stats(
     
     avg_response_time = 0
     if successful > 0:
-        response_times = [w.forwarded_at.timestamp() - w.received_at.timestamp() for w in webhooks if w.forwarded_at]
+        response_times = [w.forwarded_at.timestamp() - w.received_at.timestamp() for w in webhooks if w.forwarded_at and w.received_at]
         avg_response_time = sum(response_times) / len(response_times) if response_times else 0
     
     return {
@@ -242,6 +224,33 @@ async def get_webhook_stats(
         "pending": pending,
         "avg_response_time": avg_response_time
     }
+
+
+@router.get("/webhooks/{webhook_id}")
+async def get_webhook(
+    webhook_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Get webhook event details."""
+    try:
+        webhook_uuid = uuid.UUID(webhook_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid webhook ID format"
+        )
+    
+    stmt = select(WebhookEvent).where(WebhookEvent.id == webhook_uuid)
+    result = await db.execute(stmt)
+    webhook = result.scalars().first()
+    
+    if not webhook:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Webhook '{webhook_id}' not found"
+        )
+    
+    return WebhookEventResponse.from_orm(webhook)
 
 
 @router.post("/webhooks/{webhook_id}/retry")
@@ -278,10 +287,19 @@ async def retry_webhook(
     webhook.forwarded = False
     webhook.response_status = None
     webhook.response_body = None
+    webhook.error_message = None
     await db.commit()
     
-    # Retry forwarding
-    asyncio.create_task(forward_webhook(webhook, provider.forwarding_url, db))
+    # Retry forwarding with new session
+    asyncio.create_task(
+        forward_webhook(
+            webhook.id,
+            webhook.payload,
+            webhook.request_id,
+            provider.forwarding_url,
+            settings.DATABASE_URL
+        )
+    )
     
     return {
         "status": "accepted",
@@ -291,6 +309,34 @@ async def retry_webhook(
 
 
 # Security log endpoints
+@router.get("/logs/stats")
+async def get_security_stats(db: AsyncSession = Depends(get_db)):
+    """Get security statistics."""
+    stmt = select(SecurityLog)
+    result = await db.execute(stmt)
+    logs = result.scalars().all()
+    
+    total_events = len(logs)
+    invalid_signatures = sum(1 for l in logs if l.event_type == "invalid_signature")
+    rate_limit_events = sum(1 for l in logs if l.event_type == "rate_limit_exceeded")
+    replay_attempts = sum(1 for l in logs if l.event_type == "replay_attempt")
+    timestamp_errors = sum(1 for l in logs if l.event_type in ["timestamp_too_old", "timestamp_in_future"])
+    
+    # Count events by type
+    events_by_type = {}
+    for log in logs:
+        events_by_type[log.event_type] = events_by_type.get(log.event_type, 0) + 1
+    
+    return {
+        "total_events": total_events,
+        "invalid_signatures": invalid_signatures,
+        "rate_limit_events": rate_limit_events,
+        "replay_attempts": replay_attempts,
+        "timestamp_errors": timestamp_errors,
+        "events_by_type": events_by_type
+    }
+
+
 @router.get("/logs", response_model=List[SecurityLogResponse])
 async def list_security_logs(
     event_type: str = Query(None),
@@ -341,43 +387,16 @@ async def get_security_log(
     return log
 
 
-@router.get("/logs/stats")
-async def get_security_stats(db: AsyncSession = Depends(get_db)):
-    """Get security statistics."""
-    stmt = select(SecurityLog)
-    result = await db.execute(stmt)
-    logs = result.scalars().all()
-    
-    total_events = len(logs)
-    invalid_signatures = sum(1 for l in logs if l.event_type == "invalid_signature")
-    rate_limit_events = sum(1 for l in logs if l.event_type == "rate_limit_exceeded")
-    replay_attempts = sum(1 for l in logs if l.event_type == "replay_attempt")
-    timestamp_errors = sum(1 for l in logs if l.event_type in ["timestamp_too_old", "timestamp_in_future"])
-    
-    # Count events by type
-    events_by_type = {}
-    for log in logs:
-        events_by_type[log.event_type] = events_by_type.get(log.event_type, 0) + 1
-    
-    return {
-        "total_events": total_events,
-        "invalid_signatures": invalid_signatures,
-        "rate_limit_events": rate_limit_events,
-        "replay_attempts": replay_attempts,
-        "timestamp_errors": timestamp_errors,
-        "events_by_type": events_by_type
-    }
-
-
 @router.get("/logs/export")
 async def export_security_logs(
     event_type: str = Query(None),
     provider_name: str = Query(None),
     date_from: str = Query(None),
     date_to: str = Query(None),
+    limit: int = Query(1000, ge=1, le=10000),
     db: AsyncSession = Depends(get_db)
 ):
-    """Export security logs as CSV."""
+    """Export security logs as CSV with pagination."""
     from fastapi.responses import StreamingResponse
     import csv
     import io
@@ -397,7 +416,7 @@ async def export_security_logs(
         date_to_dt = datetime.fromisoformat(date_to)
         stmt = stmt.where(SecurityLog.created_at <= date_to_dt)
     
-    stmt = stmt.order_by(SecurityLog.created_at.desc())
+    stmt = stmt.order_by(SecurityLog.created_at.desc()).limit(limit)
     result = await db.execute(stmt)
     logs = result.scalars().all()
     
@@ -411,7 +430,7 @@ async def export_security_logs(
             str(log.id),
             log.provider_name,
             log.event_type,
-            log.client_ip,
+            log.ip_address,
             log.request_id or "",
             log.created_at.isoformat()
         ])

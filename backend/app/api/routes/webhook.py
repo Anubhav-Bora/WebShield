@@ -66,6 +66,21 @@ async def receive_webhook(
     # Get raw body for signature verification
     body = await request.body()
     
+    # Validate payload size
+    if len(body) > settings.MAX_PAYLOAD_SIZE_BYTES:
+        await log_security_event(
+            db,
+            provider_name,
+            "payload_too_large",
+            client_ip,
+            request_id=request.headers.get("X-Request-ID"),
+            details={"size": len(body), "max_allowed": settings.MAX_PAYLOAD_SIZE_BYTES}
+        )
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Payload size exceeds maximum of {settings.MAX_PAYLOAD_SIZE_BYTES} bytes"
+        )
+    
     # Query provider to get secret key
     stmt = select(Provider).where(Provider.name == provider_name)
     result = await db.execute(stmt)
@@ -175,9 +190,6 @@ async def receive_webhook(
             detail="Missing X-Request-ID header"
         )
 
-    # Import redis_client from main
-    from app.main import redis_client
-
     # Check if request_id already exists in Redis
     replay_key = f"webhook:{provider_name}:{request_id}"
     if await redis_client.exists(replay_key):
@@ -228,8 +240,15 @@ async def receive_webhook(
     await db.refresh(webhook_event)
     
     # Forward webhook to internal service (async, don't wait)
+    # Pass webhook data instead of session to avoid session closure issues
     asyncio.create_task(
-        forward_webhook(webhook_event, provider.forwarding_url, db)
+        forward_webhook(
+            webhook_event.id,
+            webhook_event.payload,
+            webhook_event.request_id,
+            provider.forwarding_url,
+            settings.DATABASE_URL
+        )
     )
     
     return WebhookResponse(

@@ -3,7 +3,7 @@
  */
 
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { SecurityLog, SecurityLogFilters } from '@/types'
+import { SecurityLogFilters } from '@/types'
 import * as securityLogService from '@/services/security-logs'
 import { useNotificationStore } from '@/store/useNotificationStore'
 

@@ -1,7 +1,7 @@
 """
 Pydantic schemas for provider management.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -22,7 +22,7 @@ class ProviderUpdate(BaseModel):
 
 
 class ProviderResponse(BaseModel):
-    """Schema for provider response."""
+    """Schema for provider response - excludes secret_key for security."""
     id: UUID = Field(..., description="Provider ID")
     name: str = Field(..., description="Provider name")
     forwarding_url: str = Field(..., description="Forwarding URL")
@@ -30,5 +30,4 @@ class ProviderResponse(BaseModel):
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

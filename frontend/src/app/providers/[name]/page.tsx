@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useProvider, useUpdateProvider, useDeleteProvider } from '@/hooks/useProviders'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 export default function ProviderDetailPage({ params }: { params: { name: string } }) {
     const router = useRouter()
@@ -57,43 +58,43 @@ export default function ProviderDetailPage({ params }: { params: { name: string 
 
     if (isLoading) {
         return (
-            <main className="min-h-screen bg-slate-900 p-8">
-                <div className="max-w-2xl mx-auto text-center text-slate-400">
+            <DashboardLayout>
+                <div className="max-w-2xl mx-auto text-center text-slate-400 py-16">
                     Loading provider...
                 </div>
-            </main>
+            </DashboardLayout>
         )
     }
 
     if (error || !provider) {
         return (
-            <main className="min-h-screen bg-slate-900 p-8">
+            <DashboardLayout>
                 <div className="max-w-2xl mx-auto">
-                    <Link href="/providers" className="text-indigo-400 hover:text-indigo-300 mb-4 inline-block">
+                    <Link href="/providers" className="text-indigo-400 hover:text-indigo-300 mb-4 inline-block text-sm">
                         ← Back to Providers
                     </Link>
-                    <div className="text-center text-red-400">
+                    <div className="text-center text-rose-400 py-8">
                         Error loading provider
                     </div>
                 </div>
-            </main>
+            </DashboardLayout>
         )
     }
 
     return (
-        <main className="min-h-screen bg-slate-900 p-8">
+        <DashboardLayout>
             <div className="max-w-2xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
-                    <Link href="/providers" className="text-indigo-400 hover:text-indigo-300 mb-4 inline-block">
+                    <Link href="/providers" className="text-indigo-400 hover:text-indigo-300 mb-4 inline-block text-sm">
                         ← Back to Providers
                     </Link>
-                    <h1 className="text-4xl font-bold text-white mb-2">{provider.name}</h1>
+                    <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 mb-2">{provider.name}</h1>
                     <p className="text-slate-400">Manage provider settings</p>
                 </div>
 
                 {/* Provider Details */}
-                <div className="bg-slate-800 rounded-lg border border-slate-700 p-8">
+                <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700 p-8">
                     {!isEditing ? (
                         <div className="space-y-6">
                             {/* Name */}
@@ -193,6 +194,6 @@ export default function ProviderDetailPage({ params }: { params: { name: string 
                     )}
                 </div>
             </div>
-        </main>
+        </DashboardLayout>
     )
 }

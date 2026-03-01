@@ -1,7 +1,7 @@
 """
 Rate limiting utilities using Redis.
 
-Implements token bucket algorithm for rate limiting.
+Implements token bucket algorithm for rate limiting with atomic operations.
 """
 import redis.asyncio as redis
 from app.core.config import settings
@@ -14,9 +14,9 @@ async def check_rate_limit(
     window_seconds: int = None
 ) -> tuple[bool, dict]:
     """
-    Check if a provider has exceeded rate limit.
+    Check if a provider has exceeded rate limit using atomic Redis operations.
     
-    Uses token bucket algorithm:
+    Uses token bucket algorithm with Lua script for atomicity:
     - Each provider gets max_requests tokens per window_seconds
     - Each request consumes 1 token
     - Tokens refill after window expires
@@ -39,27 +39,52 @@ async def check_rate_limit(
     # Create rate limit key
     rate_limit_key = f"rate_limit:{provider_id}"
     
-    # Get current count
-    current = await redis_client.get(rate_limit_key)
-    current_count = int(current) if current else 0
+    # Lua script for atomic rate limit check and increment
+    # This prevents race conditions between check and set
+    lua_script = """
+    local key = KEYS[1]
+    local max_requests = tonumber(ARGV[1])
+    local window_seconds = tonumber(ARGV[2])
     
-    # Check if limit exceeded
-    if current_count >= max_requests:
-        # Get TTL to know when limit resets
-        ttl = await redis_client.ttl(rate_limit_key)
-        return False, {
-            "remaining_requests": 0,
-            "reset_at": ttl if ttl > 0 else window_seconds,
+    local current = redis.call('GET', key)
+    local current_count = current and tonumber(current) or 0
+    
+    if current_count >= max_requests then
+        local ttl = redis.call('TTL', key)
+        return {0, ttl > 0 and ttl or window_seconds}
+    end
+    
+    local new_count = current_count + 1
+    redis.call('SETEX', key, window_seconds, new_count)
+    
+    return {1, max_requests - new_count}
+    """
+    
+    try:
+        result = await redis_client.eval(
+            lua_script,
+            1,
+            rate_limit_key,
+            max_requests,
+            window_seconds
+        )
+        
+        allowed = result[0] == 1
+        remaining = result[1] if allowed else 0
+        reset_at = result[1] if not allowed else window_seconds
+        
+        return allowed, {
+            "remaining_requests": remaining,
+            "reset_at": reset_at,
             "limit": max_requests
         }
-    
-    # Increment counter
-    new_count = current_count + 1
-    await redis_client.setex(rate_limit_key, window_seconds, new_count)
-    
-    # Return success with remaining requests
-    return True, {
-        "remaining_requests": max_requests - new_count,
-        "reset_at": window_seconds,
-        "limit": max_requests
-    }
+    except Exception as e:
+        # If Redis fails, allow request but log error
+        # This prevents Redis outage from blocking webhooks
+        import logging
+        logging.error(f"Rate limit check failed: {str(e)}")
+        return True, {
+            "remaining_requests": max_requests,
+            "reset_at": window_seconds,
+            "limit": max_requests
+        }

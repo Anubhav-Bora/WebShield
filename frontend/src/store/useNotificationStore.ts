@@ -1,48 +1,35 @@
 /**
- * Notification Zustand store
- * Manages toast notifications and alerts
+ * Notification Zustand store - Simplified
+ * Manages toast notifications only
  */
 
 import { create } from 'zustand'
 import { Notification } from '@/types'
 
 interface NotificationStoreState {
-    // State
     notifications: Notification[]
-
-    // Actions
     addNotification: (notification: Omit<Notification, 'id'>) => string
     removeNotification: (id: string) => void
     clearNotifications: () => void
-
-    // Convenience methods
     success: (title: string, message: string, duration?: number) => string
     error: (title: string, message: string, duration?: number) => string
     warning: (title: string, message: string, duration?: number) => string
     info: (title: string, message: string, duration?: number) => string
 }
 
-export const useNotificationStore = create<NotificationStoreState>((set: any) => ({
+export const useNotificationStore = create<NotificationStoreState>((set) => ({
     notifications: [],
 
-    addNotification: (notification: Omit<Notification, 'id'>) => {
-        const id = `notification-${Date.now()}-${Math.random()}`
-        set((state: NotificationStoreState) => ({
-            notifications: [
-                ...state.notifications,
-                {
-                    ...notification,
-                    id,
-                    duration: notification.duration || 5000,
-                },
-            ],
+    addNotification: (notification) => {
+        const id = `${Date.now()}-${Math.random()}`
+        set((state) => ({
+            notifications: [...state.notifications, { ...notification, id, duration: notification.duration || 5000 }],
         }))
 
-        // Auto-remove notification after duration
         if (notification.duration !== 0) {
             setTimeout(() => {
-                set((state: NotificationStoreState) => ({
-                    notifications: state.notifications.filter((n: Notification) => n.id !== id),
+                set((state) => ({
+                    notifications: state.notifications.filter((n) => n.id !== id),
                 }))
             }, notification.duration || 5000)
         }
@@ -50,106 +37,70 @@ export const useNotificationStore = create<NotificationStoreState>((set: any) =>
         return id
     },
 
-    removeNotification: (id: string) =>
-        set((state: NotificationStoreState) => ({
-            notifications: state.notifications.filter((n: Notification) => n.id !== id),
+    removeNotification: (id) =>
+        set((state) => ({
+            notifications: state.notifications.filter((n) => n.id !== id),
         })),
 
     clearNotifications: () => set({ notifications: [] }),
 
-    success: (title: string, message: string, duration?: number) => {
-        const id = `notification-${Date.now()}-${Math.random()}`
-        const notification: Notification = {
-            id,
-            type: 'success',
-            title,
-            message,
-            duration: duration || 5000,
-        }
-        set((state: NotificationStoreState) => ({
-            notifications: [...state.notifications, notification],
+    success: (title, message, duration) => {
+        const id = `${Date.now()}-${Math.random()}`
+        set((state) => ({
+            notifications: [...state.notifications, { id, type: 'success', title, message, duration: duration || 5000 }],
         }))
-
         if (duration !== 0) {
             setTimeout(() => {
-                set((state: NotificationStoreState) => ({
-                    notifications: state.notifications.filter((n: Notification) => n.id !== id),
+                set((state) => ({
+                    notifications: state.notifications.filter((n) => n.id !== id),
                 }))
             }, duration || 5000)
         }
-
         return id
     },
 
-    error: (title: string, message: string, duration?: number) => {
-        const id = `notification-${Date.now()}-${Math.random()}`
-        const notification: Notification = {
-            id,
-            type: 'error',
-            title,
-            message,
-            duration: duration || 5000,
-        }
-        set((state: NotificationStoreState) => ({
-            notifications: [...state.notifications, notification],
+    error: (title, message, duration) => {
+        const id = `${Date.now()}-${Math.random()}`
+        set((state) => ({
+            notifications: [...state.notifications, { id, type: 'error', title, message, duration: duration || 5000 }],
         }))
-
         if (duration !== 0) {
             setTimeout(() => {
-                set((state: NotificationStoreState) => ({
-                    notifications: state.notifications.filter((n: Notification) => n.id !== id),
+                set((state) => ({
+                    notifications: state.notifications.filter((n) => n.id !== id),
                 }))
             }, duration || 5000)
         }
-
         return id
     },
 
-    warning: (title: string, message: string, duration?: number) => {
-        const id = `notification-${Date.now()}-${Math.random()}`
-        const notification: Notification = {
-            id,
-            type: 'warning',
-            title,
-            message,
-            duration: duration || 5000,
-        }
-        set((state: NotificationStoreState) => ({
-            notifications: [...state.notifications, notification],
+    warning: (title, message, duration) => {
+        const id = `${Date.now()}-${Math.random()}`
+        set((state) => ({
+            notifications: [...state.notifications, { id, type: 'warning', title, message, duration: duration || 5000 }],
         }))
-
         if (duration !== 0) {
             setTimeout(() => {
-                set((state: NotificationStoreState) => ({
-                    notifications: state.notifications.filter((n: Notification) => n.id !== id),
+                set((state) => ({
+                    notifications: state.notifications.filter((n) => n.id !== id),
                 }))
             }, duration || 5000)
         }
-
         return id
     },
 
-    info: (title: string, message: string, duration?: number) => {
-        const id = `notification-${Date.now()}-${Math.random()}`
-        const notification: Notification = {
-            id,
-            type: 'info',
-            title,
-            message,
-            duration: duration || 5000,
-        }
-        set((state: NotificationStoreState) => ({
-            notifications: [...state.notifications, notification],
+    info: (title, message, duration) => {
+        const id = `${Date.now()}-${Math.random()}`
+        set((state) => ({
+            notifications: [...state.notifications, { id, type: 'info', title, message, duration: duration || 5000 }],
         }))
-
         if (duration !== 0) {
             setTimeout(() => {
-                set((state: NotificationStoreState) => ({
-                    notifications: state.notifications.filter((n: Notification) => n.id !== id),
+                set((state) => ({
+                    notifications: state.notifications.filter((n) => n.id !== id),
                 }))
             }, duration || 5000)
         }
-
         return id
     },
 }))

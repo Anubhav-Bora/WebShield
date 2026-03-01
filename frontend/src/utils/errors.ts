@@ -2,7 +2,7 @@
  * Error handling utilities
  */
 
-import { ApiError } from '@/types'
+
 import { ERROR_MESSAGES } from './constants'
 
 /**

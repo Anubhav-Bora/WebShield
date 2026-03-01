@@ -3,7 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { WebhookEvent, WebhookResponse } from '@/types'
+import { WebhookResponse } from '@/types'
 import * as webhookService from '@/services/webhooks'
 import { useNotificationStore } from '@/store/useNotificationStore'
 

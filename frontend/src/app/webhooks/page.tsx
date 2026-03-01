@@ -2,70 +2,65 @@
 
 import React from 'react'
 import { useWebhookEvents } from '@/hooks/useWebhooks'
-import { formatDateTime, formatStatus } from '@/utils/formatters'
+import { formatDateTime } from '@/utils/formatters'
+import { DataTable } from '@/components/ui/DataTable'
+import DashboardLayout from '@/components/layout/DashboardLayout'
+import gsap from 'gsap'
 
 export default function WebhooksPage() {
     const { data: webhooks, isLoading, error } = useWebhookEvents()
 
+    React.useEffect(() => {
+        gsap.from('.page-header', { opacity: 0, x: -20, duration: 0.5, ease: 'power2.out' })
+    }, [])
+
+    const columns = [
+        { key: 'request_id', title: 'Request ID', render: (w: any) => <span className="font-mono text-white text-xs truncate max-w-[150px] inline-block">{w.request_id}</span> },
+        { key: 'received_at', title: 'Received At', render: (w: any) => <span className="text-slate-300">{formatDateTime(w.received_at)}</span> },
+        {
+            key: 'signature_valid', title: 'Signature', render: (w: any) => (
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${w.signature_valid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                    {w.signature_valid ? 'Valid' : 'Invalid'}
+                </span>
+            )
+        },
+        {
+            key: 'forwarded', title: 'Forwarded', render: (w: any) => (
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${w.forwarded ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'}`}>
+                    {w.forwarded ? 'Yes' : 'No'}
+                </span>
+            )
+        },
+        {
+            key: 'status', title: 'Status', render: (w: any) => (
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${w.response_status === 200 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                    {w.response_status || 'Pending'}
+                </span>
+            )
+        }
+    ]
+
     return (
-        <main className="min-h-screen bg-slate-900 p-8">
+        <DashboardLayout>
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">Webhooks</h1>
-                    <p className="text-slate-400">View and manage webhook events</p>
+                <div className="mb-8 page-header">
+                    <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 mb-2">Webhooks</h1>
+                    <p className="text-slate-400 text-lg">View and manage webhook events</p>
                 </div>
 
-                {/* Webhooks Table */}
-                <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
-                    {isLoading ? (
-                        <div className="p-8 text-center text-slate-400">Loading webhooks...</div>
-                    ) : error ? (
-                        <div className="p-8 text-center text-red-400">Error loading webhooks</div>
-                    ) : webhooks && webhooks.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-slate-700 border-b border-slate-600">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold text-white">Request ID</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold text-white">Received At</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold text-white">Signature Valid</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold text-white">Forwarded</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold text-white">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-700">
-                                    {webhooks.map((webhook: any) => (
-                                        <tr key={webhook.id} className="hover:bg-slate-700 transition">
-                                            <td className="px-6 py-4 text-white font-mono text-sm truncate">{webhook.request_id}</td>
-                                            <td className="px-6 py-4 text-slate-300 text-sm">{formatDateTime(webhook.received_at)}</td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded text-sm font-semibold ${webhook.signature_valid ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}`}>
-                                                    {webhook.signature_valid ? 'Valid' : 'Invalid'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded text-sm font-semibold ${webhook.forwarded ? 'bg-blue-900 text-blue-200' : 'bg-slate-700 text-slate-300'}`}>
-                                                    {webhook.forwarded ? 'Yes' : 'No'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded text-sm font-semibold ${webhook.response_status === 200 ? 'bg-green-900 text-green-200' : 'bg-yellow-900 text-yellow-200'}`}>
-                                                    {webhook.response_status || 'Pending'}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : (
-                        <div className="p-8 text-center text-slate-400">
-                            <p>No webhooks found</p>
-                        </div>
-                    )}
-                </div>
+                {isLoading ? (
+                    <div className="p-8 text-center text-slate-400 animate-pulse">Loading webhooks...</div>
+                ) : error ? (
+                    <div className="p-8 text-center text-rose-400">Error loading webhooks</div>
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={webhooks || []}
+                        delay={0.2}
+                    />
+                )}
             </div>
-        </main>
+        </DashboardLayout>
     )
 }
+

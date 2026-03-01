@@ -1,0 +1,27 @@
+# ESLint ignore file
+
+# Dependencies
+node_modules/
+
+# Build and cache
+.next/
+out/
+build/
+dist/
+.vercel/
+
+# Generated files
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
