@@ -1,16 +1,17 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useProvider, useUpdateProvider, useDeleteProvider } from '@/hooks/useProviders'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 
-export default function ProviderDetailPage({ params }: { params: { name: string } }) {
+export default function ProviderDetailPage({ params }: { params: Promise<{ name: string }> }) {
     const router = useRouter()
-    const { data: provider, isLoading, error } = useProvider(params.name)
-    const updateProvider = useUpdateProvider(params.name)
-    const deleteProvider = useDeleteProvider(params.name)
+    const { name } = use(params)
+    const { data: provider, isLoading, error } = useProvider(name)
+    const updateProvider = useUpdateProvider(name)
+    const deleteProvider = useDeleteProvider(name)
 
     const [isEditing, setIsEditing] = useState(false)
     const [formData, setFormData] = useState({
@@ -46,7 +47,7 @@ export default function ProviderDetailPage({ params }: { params: { name: string 
     }
 
     const handleDelete = async () => {
-        if (confirm(`Are you sure you want to delete provider "${params.name}"?`)) {
+        if (confirm(`Are you sure you want to delete provider "${name}"?`)) {
             try {
                 await deleteProvider.mutateAsync()
                 router.push('/providers')
