@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
-            <body>
+            <body suppressHydrationWarning>
                 <ErrorBoundary>
                     <Providers>{children}</Providers>
                 </ErrorBoundary>
