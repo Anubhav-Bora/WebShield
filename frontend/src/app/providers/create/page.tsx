@@ -32,7 +32,7 @@ export default function CreateProviderPage() {
             await createProvider.mutateAsync(formData)
             router.push('/providers')
         } catch (error) {
-            console.error('Error creating provider:', error)
+            // Error is already handled by React Query and notification store
         }
     }
 
@@ -44,7 +44,7 @@ export default function CreateProviderPage() {
                     <Link href="/providers" className="text-indigo-400 hover:text-indigo-300 mb-4 inline-block text-sm">
                         ← Back to Providers
                     </Link>
-                    <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 mb-2">Create Provider</h1>
+                    <h1 className="text-4xl font-extrabold text-white mb-2">Create Provider</h1>
                     <p className="text-slate-400">Add a new webhook provider to your gateway</p>
                 </div>
 

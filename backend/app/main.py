@@ -11,6 +11,7 @@ from app.core.config import settings, setup_logging
 from app.db.session import engine
 from app.api.routes.webhook import router as webhooks_router
 from app.api.routes.admin import router as admin_router
+from app.api.routes.auth import router as auth_router
 
 # Setup logging
 setup_logging()
@@ -101,6 +102,12 @@ app.include_router(
     admin_router,
     prefix="/admin",
     tags=["Admin"]
+)
+
+# Include auth routes
+app.include_router(
+    auth_router,
+    tags=["Authentication"]
 )
 
 @app.get("/health", tags=["Health"])

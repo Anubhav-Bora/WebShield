@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     
+    # For backward compatibility
+    @property
+    def SECRET_KEY(self) -> str:
+        return self.JWT_SECRET_KEY
+    
+    @property
+    def ALGORITHM(self) -> str:
+        return self.JWT_ALGORITHM
+    
     # Rate Limiting
     RATE_LIMIT_MAX_REQUESTS: int = 100
     RATE_LIMIT_WINDOW_SECONDS: int = 60

@@ -44,7 +44,7 @@ export default function WebhooksPage() {
         <DashboardLayout>
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8 page-header">
-                    <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 mb-2">Webhooks</h1>
+                    <h1 className="text-4xl font-extrabold text-white mb-2">Webhooks</h1>
                     <p className="text-slate-400 text-lg">View and manage webhook events</p>
                 </div>
 

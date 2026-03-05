@@ -4,13 +4,16 @@ import React, { useEffect, useRef } from 'react'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import gsap from 'gsap'
 
+export type StatCardTheme = 'emerald' | 'blue' | 'dark'
+
 interface StatCardProps {
     title: string
     value: string | number
-    icon: React.ReactNode
+    icon?: React.ReactNode
     trend?: string
     trendUp?: boolean
     delay?: number
+    colorTheme?: StatCardTheme
 }
 
 export function StatCard({
@@ -19,11 +22,11 @@ export function StatCard({
     icon,
     trend,
     trendUp = true,
-    delay = 0
+    delay = 0,
+    colorTheme = 'dark'
 }: StatCardProps) {
     const cardRef = useRef<HTMLDivElement>(null)
     const valueRef = useRef<HTMLParagraphElement>(null)
-    const iconRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         if (!cardRef.current) return
@@ -61,23 +64,12 @@ export function StatCard({
                 }
             })
         }
-
-        // Icon float animation
-        if (iconRef.current) {
-            gsap.to(iconRef.current, {
-                y: -5,
-                duration: 2,
-                repeat: -1,
-                yoyo: true,
-                ease: 'sine.inOut'
-            })
-        }
     }, [delay, value])
 
     const handleMouseEnter = () => {
         if (cardRef.current) {
             gsap.to(cardRef.current, {
-                scale: 1.05,
+                y: -5,
                 duration: 0.3,
                 ease: 'power2.out'
             })
@@ -87,61 +79,84 @@ export function StatCard({
     const handleMouseLeave = () => {
         if (cardRef.current) {
             gsap.to(cardRef.current, {
-                scale: 1,
+                y: 0,
                 duration: 0.3,
                 ease: 'power2.out'
             })
         }
     }
 
+    const getThemeStyles = () => {
+        switch (colorTheme) {
+            case 'emerald':
+                return {
+                    wrapper: 'bg-gradient-to-br from-emerald-500/20 via-emerald-900/10 to-transparent border-emerald-500/20',
+                    text: 'text-emerald-50',
+                    trend: 'text-emerald-400'
+                }
+            case 'blue':
+                return {
+                    wrapper: 'bg-gradient-to-br from-blue-500/20 via-blue-900/10 to-transparent border-blue-500/20',
+                    text: 'text-blue-50',
+                    trend: 'text-rose-400' // Using rose for negative trend as in image
+                }
+            case 'dark':
+            default:
+                return {
+                    wrapper: 'bg-gradient-to-br from-slate-700/30 via-slate-800/10 to-transparent border-slate-700/50',
+                    text: 'text-white',
+                    trend: 'text-emerald-400'
+                }
+        }
+    }
+
+    const theme = getThemeStyles()
+
     return (
         <div
             ref={cardRef}
-            className="relative glass rounded-2xl p-6 border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-300 group cursor-pointer overflow-hidden"
+            className={`relative rounded-2xl p-6 border transition-all duration-300 group cursor-pointer overflow-hidden ${theme.wrapper}`}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
+            style={{
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                backgroundColor: 'rgba(20, 20, 25, 0.4)'
+            }}
         >
-            {/* Gradient overlay on hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-indigo-500/10 group-hover:via-purple-500/5 group-hover:to-pink-500/10 transition-all duration-500 rounded-2xl" />
+            <div className="relative z-10 flex flex-col h-full justify-between">
+                <div>
+                    <div className="flex justify-between items-start mb-2">
+                        <p className="text-slate-300 text-sm font-semibold tracking-wide uppercase">{title}</p>
+                        {icon && (
+                            <div className="text-slate-400 opacity-50">
+                                {icon}
+                            </div>
+                        )}
+                    </div>
 
-            {/* Glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500" />
-
-            <div className="relative z-10">
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                        <p className="text-slate-400 text-sm font-medium tracking-wide uppercase mb-3">{title}</p>
+                    <div className="flex items-end justify-between mt-4">
                         <p
                             ref={valueRef}
-                            className="text-white text-4xl font-bold tracking-tight bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent"
+                            className={`text-4xl font-bold tracking-tight ${theme.text}`}
                         >
-                            {value}
+                            {typeof value === 'number' ? 0 : value}
                         </p>
-                    </div>
-                    <div
-                        ref={iconRef}
-                        className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 group-hover:border-indigo-400/50 transition-all duration-300"
-                    >
-                        <div className="text-indigo-400 group-hover:text-indigo-300 transition-colors">
-                            {icon}
-                        </div>
+
+                        {trend && (
+                            <div className="flex items-center gap-1 text-sm font-medium pb-1">
+                                <span className={theme.trend}>
+                                    {trend}
+                                </span>
+                                {trendUp ? (
+                                    <TrendingUp size={16} className={theme.trend} />
+                                ) : (
+                                    <TrendingDown size={16} className={theme.trend} />
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
-
-                {trend && (
-                    <div className="flex items-center gap-2 text-sm pt-3 border-t border-slate-700/50">
-                        <div className={`p-1 rounded-md ${trendUp ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
-                            {trendUp ? (
-                                <TrendingUp size={14} className="text-emerald-400" />
-                            ) : (
-                                <TrendingDown size={14} className="text-rose-400" />
-                            )}
-                        </div>
-                        <span className={`font-medium ${trendUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {trend}
-                        </span>
-                    </div>
-                )}
             </div>
         </div>
     )

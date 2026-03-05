@@ -1,10 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
-    swcMinify: true,
     poweredByHeader: false,
     compress: true,
-    
+
     // Security headers
     async headers() {
         return [
@@ -35,7 +34,7 @@ const nextConfig = {
             }
         ]
     },
-    
+
     // Redirects
     async redirects() {
         return [
@@ -46,12 +45,12 @@ const nextConfig = {
             }
         ]
     },
-    
+
     // Image optimization
     images: {
         minimumCacheTTL: 60,
     },
-    
+
     // Environment variables
     env: {
         NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
@@ -59,4 +58,3 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
-

@@ -62,64 +62,60 @@ export function DataTable({ title, columns, data, delay = 0 }: DataTableProps) {
     return (
         <div
             ref={containerRef}
-            className="glass rounded-2xl border border-slate-700/50 overflow-hidden hover:border-indigo-500/30 transition-all duration-500 group"
+            className="rounded-2xl border border-white/5 overflow-hidden bg-[#141419]/90 backdrop-blur-xl"
         >
-            {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-purple-500/0 to-transparent group-hover:from-indigo-500/5 group-hover:via-purple-500/5 transition-all duration-700 rounded-2xl pointer-events-none" />
-
             {title && (
-                <div ref={titleRef} className="px-6 py-5 border-b border-slate-700/50 relative z-10">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                        <span className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></span>
-                        {title}
-                    </h2>
+                <div ref={titleRef} className="px-6 py-5 border-b border-white/5 relative z-10 flex justify-between items-center">
+                    <div>
+                        <h2 className="text-xl font-bold text-white mb-1">
+                            {title}
+                        </h2>
+                        <p className="text-sm text-slate-500">Lorem ipsum dolor sit amet, consectetur adipis.</p>
+                    </div>
+                    <button className="px-4 py-2 rounded-lg bg-white/5 text-slate-300 text-sm hover:bg-white/10 transition-colors border border-white/5 flex items-center gap-2">
+                        This Month
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                    </button>
                 </div>
             )}
 
-            <div className="overflow-x-auto relative z-10">
-                <table className="w-full">
-                    <thead className="bg-slate-900/30 border-b border-slate-700/50">
+            <div className="overflow-x-auto relative z-10 p-2">
+                <table className="w-full border-collapse">
+                    <thead className="hidden">
                         <tr>
                             {columns.map((column) => (
-                                <th
-                                    key={column.key}
-                                    className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider"
-                                >
-                                    {column.title}
-                                </th>
+                                <th key={column.key}>{column.title}</th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-700/30">
+                    <tbody className="divide-y divide-white/5">
                         {data.length > 0 ? (
                             data.map((item, index) => (
                                 <tr
                                     key={index}
                                     ref={(el) => { rowsRef.current[index] = el }}
-                                    className="hover:bg-slate-700/30 transition-all duration-300 cursor-pointer group/row"
+                                    className="hover:bg-white/5 transition-all duration-300 group/row"
                                 >
                                     {columns.map((column) => (
                                         <td
                                             key={column.key}
-                                            className="px-6 py-4 text-sm text-slate-300 group-hover/row:text-white transition-colors"
+                                            className="px-6 py-4 text-sm text-slate-300 group-hover/row:text-white transition-colors border-none"
                                         >
                                             {column.render ? column.render(item) : item[column.key]}
                                         </td>
                                     ))}
+                                    <td className="px-6 py-4 text-right">
+                                        <button className="text-slate-500 hover:text-white">•••</button>
+                                    </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
                                 <td
-                                    colSpan={columns.length}
+                                    colSpan={columns.length + 1}
                                     className="px-6 py-12 text-center text-slate-400"
                                 >
                                     <div className="flex flex-col items-center gap-3">
-                                        <div className="w-16 h-16 rounded-full bg-slate-700/30 flex items-center justify-center">
-                                            <svg className="w-8 h-8 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                            </svg>
-                                        </div>
                                         <p className="text-sm font-medium">No data available</p>
                                     </div>
                                 </td>

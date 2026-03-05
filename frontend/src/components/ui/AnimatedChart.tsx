@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
+import { XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
 
 interface AnimatedChartProps {
     title: string
@@ -40,10 +40,10 @@ export function AnimatedChart({ title, data, dataKey, xAxisKey, delay = 0 }: Ani
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             return (
-                <div className="glass rounded-xl p-4 border border-indigo-500/30 shadow-2xl">
+                <div className="glass rounded-xl p-4 border border-emerald-500/30 shadow-2xl bg-[#141419]/90 backdrop-blur-md">
                     <p className="text-slate-300 text-sm mb-2 font-medium">{label}</p>
                     <p className="text-white text-lg font-bold">
-                        <span className="text-indigo-400">{payload[0].value}</span> requests
+                        <span className="text-emerald-400">{payload[0].value}</span> requests
                     </p>
                 </div>
             )
@@ -54,48 +54,43 @@ export function AnimatedChart({ title, data, dataKey, xAxisKey, delay = 0 }: Ani
     return (
         <div
             ref={containerRef}
-            className="relative glass rounded-2xl p-6 border border-slate-700/50 hover:border-indigo-500/30 transition-all duration-500 group overflow-hidden"
+            className="relative rounded-2xl p-6 border border-slate-700/50 hover:border-emerald-500/30 transition-all duration-500 group overflow-hidden bg-gradient-to-br from-slate-800/20 to-transparent"
         >
-            {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-purple-500/0 to-transparent group-hover:from-indigo-500/5 group-hover:via-purple-500/5 transition-all duration-700 rounded-2xl" />
-
-            {/* Glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl opacity-0 group-hover:opacity-10 blur-2xl transition-opacity duration-700" />
-
             <div className="relative z-10">
-                <h2
-                    ref={titleRef}
-                    className="text-xl font-bold text-white mb-6 flex items-center gap-3"
-                >
-                    <span className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></span>
-                    {title}
-                </h2>
+                <div className="flex justify-between items-center mb-6">
+                    <h2
+                        ref={titleRef}
+                        className="text-xl font-bold text-white flex items-center gap-3"
+                    >
+                        {title}
+                    </h2>
+                    <button className="px-3 py-1.5 rounded-md bg-white/5 text-slate-300 text-sm hover:bg-white/10 transition-colors border border-white/5">
+                        Export PDF
+                    </button>
+                </div>
 
                 <ResponsiveContainer width="100%" height={300}>
                     <AreaChart data={data}>
                         <defs>
                             <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
                         <XAxis
                             dataKey={xAxisKey}
-                            stroke="#94a3b8"
+                            stroke="#64748b"
                             style={{ fontSize: '12px', fontWeight: 500 }}
                             tickLine={false}
+                            axisLine={false}
+                            dy={10}
                         />
-                        <YAxis
-                            stroke="#94a3b8"
-                            style={{ fontSize: '12px', fontWeight: 500 }}
-                            tickLine={false}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#475569', strokeWidth: 1, strokeDasharray: '4 4' }} />
                         <Area
                             type="monotone"
                             dataKey={dataKey}
-                            stroke="#6366f1"
+                            stroke="#10b981"
                             strokeWidth={3}
                             fill="url(#colorGradient)"
                             isAnimationActive={true}

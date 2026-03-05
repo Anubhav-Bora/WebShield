@@ -1,6 +1,7 @@
 import React from 'react'
 import { Providers } from './providers'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ToastContainer } from '@/components/ui/Toast'
 import '../styles/globals.css'
 
 export const metadata = {
@@ -17,7 +18,10 @@ export default function RootLayout({
         <html lang="en">
             <body suppressHydrationWarning>
                 <ErrorBoundary>
-                    <Providers>{children}</Providers>
+                    <Providers>
+                        {children}
+                        <ToastContainer />
+                    </Providers>
                 </ErrorBoundary>
             </body>
         </html>

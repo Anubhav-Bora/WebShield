@@ -10,7 +10,7 @@ import { StatCardSkeleton } from '@/components/ui/StatCardSkeleton'
 import { AnimatedChart } from '@/components/ui/AnimatedChart'
 import { DataTable } from '@/components/ui/DataTable'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { Package, Link as LinkIcon, CheckCircle, ShieldAlert, ArrowRight } from 'lucide-react'
+import { User } from 'lucide-react'
 
 export default function DashboardPage() {
     // Fetch data - React Query handles caching automatically
@@ -75,18 +75,19 @@ export default function DashboardPage() {
                 <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
 
                 {/* Header */}
-                <div className="mb-12 relative z-10">
-                    <h1 className="page-title text-5xl font-extrabold mb-3 gradient-text">
-                        Gateway Overview
-                    </h1>
-                    <p className="page-subtitle text-slate-400 text-lg flex items-center gap-2">
-                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-                        Real-time webhook monitoring and analytics
-                    </p>
+                <div className="mb-10 relative z-10 flex items-end justify-between">
+                    <div>
+                        <h1 className="page-title text-white text-3xl font-bold mb-2">
+                            Dashboard
+                        </h1>
+                        <p className="page-subtitle text-slate-400 text-sm flex items-center gap-2">
+                            Hey Admin— Here's what's happening with your gateway today
+                        </p>
+                    </div>
                 </div>
 
                 {/* Stats Grid - Show all skeletons or all cards together */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 relative z-10">
                     {isAnyLoading ? (
                         <>
                             <StatCardSkeleton />
@@ -99,117 +100,104 @@ export default function DashboardPage() {
                             <StatCard
                                 title="Total Providers"
                                 value={providers?.length || 0}
-                                icon={<Package size={24} />}
                                 trend="+2 this week"
                                 trendUp={true}
                                 delay={0}
+                                colorTheme="emerald"
                             />
                             <StatCard
                                 title="Total Webhooks"
                                 value={webhookStats?.total || 0}
-                                icon={<LinkIcon size={24} />}
                                 trend="+15% vs yesterday"
                                 trendUp={true}
                                 delay={0.1}
+                                colorTheme="blue"
                             />
                             <StatCard
                                 title="Delivery Success"
                                 value={`${successRate}%`}
-                                icon={<CheckCircle size={24} />}
                                 trend="Stable"
                                 trendUp={true}
                                 delay={0.2}
+                                colorTheme="dark"
                             />
                             <StatCard
                                 title="Security Events"
                                 value={securityStats?.total_events || 0}
-                                icon={<ShieldAlert size={24} />}
                                 trend="-5 threats blocked"
-                                trendUp={true}
+                                trendUp={false}
                                 delay={0.3}
+                                colorTheme="dark"
                             />
                         </>
                     )}
                 </div>
 
                 {/* Main Content Area */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10 relative z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10 relative z-10 flex-col-reverse lg:flex-row">
                     {/* Animated Traffic Chart */}
                     <div className="lg:col-span-2 relative h-[420px]">
                         <AnimatedChart
-                            title="Real-time Webhook Traffic"
+                            title="Sales Report"
                             data={chartData}
                             dataKey="requests"
                             xAxisKey="time"
                             delay={0.4}
                         />
+                        {/* Providers Table moved here to match layout */}
+                        <div className="mt-8 relative z-10">
+                            <DataTable
+                                title="Transactions"
+                                columns={providerColumns}
+                                data={providers?.slice(0, 5) || []}
+                                delay={0.6}
+                            />
+                        </div>
                     </div>
 
-                    {/* Quick Actions Panel */}
-                    <div className="glass rounded-2xl p-6 border border-slate-700/50 h-[420px] flex flex-col relative overflow-hidden group">
-                        {/* Gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-blue-500/0 to-transparent group-hover:from-cyan-500/5 group-hover:via-blue-500/5 transition-all duration-700 rounded-2xl" />
+                    {/* Right Column: Traffic Sources List */}
+                    <div className="glass flex flex-col gap-6 relative overflow-hidden group">
 
-                        <div className="relative z-10">
-                            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                                <span className="w-1 h-6 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full"></span>
-                                Quick Actions
+                        {/* Traffic Sources */}
+                        <div className="bg-[#141419]/90 rounded-2xl p-6 border border-white/5 h-auto">
+                            <h2 className="text-xl font-bold text-white mb-6">
+                                Traffic Sources
                             </h2>
-                            <div className="space-y-4 flex-1">
-                                <a href="/providers" className="group/item flex items-center justify-between p-4 glass rounded-xl border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-300 cursor-pointer relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-indigo-500/0 group-hover/item:from-indigo-500/10 group-hover/item:to-transparent transition-all duration-300" />
-                                    <div className="flex items-center space-x-3 relative z-10">
-                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center group-hover/item:scale-110 transition-transform duration-300">
-                                            <Package className="text-indigo-400" size={20} />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-white font-semibold group-hover/item:text-indigo-400 transition-colors">Manage Providers</h4>
-                                            <p className="text-xs text-slate-400">Add or edit endpoints</p>
+                            <div className="space-y-4">
+                                {['Direct', 'Referral', 'Facebook', 'Google'].map((source) => (
+                                    <div key={source} className="flex flex-col gap-2 py-2 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 rounded-lg transition-colors cursor-pointer">
+                                        <p className="text-slate-300 font-medium text-sm">{source}</p>
+                                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full bg-slate-500 rounded-full" style={{ width: `${Math.random() * 60 + 20}%` }}></div>
                                         </div>
                                     </div>
-                                    <ArrowRight size={18} className="text-slate-500 group-hover/item:text-indigo-400 group-hover/item:translate-x-1 transition-all relative z-10" />
-                                </a>
+                                ))}
+                            </div>
+                        </div>
 
-                                <a href="/webhooks" className="group/item flex items-center justify-between p-4 glass rounded-xl border border-slate-700/50 hover:border-cyan-500/50 transition-all duration-300 cursor-pointer relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 to-cyan-500/0 group-hover/item:from-cyan-500/10 group-hover/item:to-transparent transition-all duration-300" />
-                                    <div className="flex items-center space-x-3 relative z-10">
-                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center group-hover/item:scale-110 transition-transform duration-300">
-                                            <LinkIcon className="text-cyan-400" size={20} />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-white font-semibold group-hover/item:text-cyan-400 transition-colors">View Webhooks</h4>
-                                            <p className="text-xs text-slate-400">Check delivery status</p>
-                                        </div>
-                                    </div>
-                                    <ArrowRight size={18} className="text-slate-500 group-hover/item:text-cyan-400 group-hover/item:translate-x-1 transition-all relative z-10" />
-                                </a>
-
-                                <a href="/security-logs" className="group/item flex items-center justify-between p-4 glass rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all duration-300 cursor-pointer relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-purple-500/0 group-hover/item:from-purple-500/10 group-hover/item:to-transparent transition-all duration-300" />
-                                    <div className="flex items-center space-x-3 relative z-10">
-                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 flex items-center justify-center group-hover/item:scale-110 transition-transform duration-300">
-                                            <ShieldAlert className="text-purple-400" size={20} />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-white font-semibold group-hover/item:text-purple-400 transition-colors">Security Logs</h4>
-                                            <p className="text-xs text-slate-400">Review blocked payloads</p>
+                        {/* Recent Customers (formerly Quick Actions) */}
+                        <div className="bg-[#141419]/90 rounded-2xl p-6 border border-white/5 flex-1 min-h-[300px]">
+                            <h2 className="text-xl font-bold text-white mb-6">
+                                Recent Customers
+                            </h2>
+                            <div className="space-y-4">
+                                {providers?.slice(0, 4).map((p: any, i) => (
+                                    <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 rounded-lg transition-colors cursor-pointer">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center overflow-hidden">
+                                                {/* Fallback to user icon if fake face image URL doesn't exist */}
+                                                <User size={14} className="text-indigo-400" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-white text-sm font-semibold">{p.name}</h4>
+                                                <p className="text-xs text-slate-500">customer@email.com</p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <ArrowRight size={18} className="text-slate-500 group-hover/item:text-purple-400 group-hover/item:translate-x-1 transition-all relative z-10" />
-                                </a>
+                                ))}
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Providers Table */}
-                <div className="mb-10 relative z-10">
-                    <DataTable
-                        title="Current Providers Activity"
-                        columns={providerColumns}
-                        data={providers?.slice(0, 5) || []}
-                        delay={0.6}
-                    />
                 </div>
             </div>
         </DashboardLayout>

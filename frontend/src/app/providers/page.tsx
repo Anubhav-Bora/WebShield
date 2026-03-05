@@ -22,7 +22,7 @@ export default function ProvidersPage() {
                 await deleteProvider(name)
                 window.location.reload()
             } catch (err) {
-                console.error('Error deleting provider:', err)
+                // Error will be shown via notification system
             }
         }
     }
@@ -62,7 +62,7 @@ export default function ProvidersPage() {
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8 page-header">
                     <div>
-                        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 mb-2">Providers</h1>
+                        <h1 className="text-4xl font-extrabold text-white mb-2">Providers</h1>
                         <p className="text-slate-400 text-lg">Manage your webhook providers</p>
                     </div>
                     <Link

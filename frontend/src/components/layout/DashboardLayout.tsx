@@ -12,7 +12,7 @@ export default function DashboardLayout({
     const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
     return (
-        <div className="min-h-screen bg-slate-900 text-slate-300 font-sans flex">
+        <div className="min-h-screen bg-[#0d0d12] text-slate-300 font-sans flex font-medium">
             {/* Sidebar Navigation */}
             <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
@@ -25,7 +25,7 @@ export default function DashboardLayout({
                 <Header />
 
                 {/* Page Content */}
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-900">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#0d0d12]">
                     <div className="container mx-auto p-8 relative">
                         {children}
                     </div>

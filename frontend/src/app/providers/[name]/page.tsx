@@ -42,7 +42,7 @@ export default function ProviderDetailPage({ params }: { params: Promise<{ name:
             await updateProvider.mutateAsync(formData)
             setIsEditing(false)
         } catch (error) {
-            console.error('Error updating provider:', error)
+            // Error is already handled by React Query and notification store
         }
     }
 
@@ -52,7 +52,7 @@ export default function ProviderDetailPage({ params }: { params: Promise<{ name:
                 await deleteProvider.mutateAsync()
                 router.push('/providers')
             } catch (error) {
-                console.error('Error deleting provider:', error)
+                // Error is already handled by React Query and notification store
             }
         }
     }
@@ -90,7 +90,7 @@ export default function ProviderDetailPage({ params }: { params: Promise<{ name:
                     <Link href="/providers" className="text-indigo-400 hover:text-indigo-300 mb-4 inline-block text-sm">
                         ← Back to Providers
                     </Link>
-                    <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 mb-2">{provider.name}</h1>
+                    <h1 className="text-4xl font-extrabold text-white mb-2">{provider.name}</h1>
                     <p className="text-slate-400">Manage provider settings</p>
                 </div>
 
