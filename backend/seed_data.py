@@ -151,6 +151,7 @@ async def seed_webhook_events(session: AsyncSession, providers: list):
         event = WebhookEvent(
             provider_id=provider.id,
             request_id=f"req_{uuid.uuid4().hex[:16]}",
+            source=provider.name,
             payload=payload,
             headers={"Content-Type": "application/json", "User-Agent": f"{provider.name}-webhook/1.0"},
             signature_valid=signature_valid,

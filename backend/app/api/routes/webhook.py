@@ -228,6 +228,7 @@ async def receive_webhook(
         id=uuid.uuid4(),
         provider_id=provider.id,
         request_id=request_id,
+        source=provider.name,
         payload=payload,
         headers=dict(request.headers),
         signature_valid=True,

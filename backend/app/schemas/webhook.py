@@ -52,6 +52,7 @@ class WebhookEventResponse(BaseModel):
     id: UUID = Field(..., description="Webhook event ID")
     provider_id: UUID = Field(..., description="Provider ID")
     request_id: str = Field(..., description="Request ID for deduplication")
+    source: str = Field(..., description="Source/origin of the webhook")
     payload: Dict[str, Any] = Field(..., description="Webhook payload")
     headers: Dict[str, str] = Field(..., description="Request headers")
     signature_valid: bool = Field(..., description="Whether signature was valid")

@@ -49,6 +49,14 @@ class WebhookEvent(Base):
         comment="Unique request ID for idempotency"
     )
     
+    # Source of the webhook (e.g., provider name, API endpoint)
+    source: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default="Unknown",
+        comment="Source/origin of the webhook"
+    )
+    
     # The actual webhook payload (stored as JSONB for efficient querying)
     payload: Mapped[dict] = mapped_column(
         JSONB,
