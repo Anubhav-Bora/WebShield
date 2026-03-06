@@ -14,8 +14,8 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // If logged in and trying to access login page, redirect to dashboard
-    if (token && isPublicRoute) {
+    // If logged in and trying to access login/register page (but NOT home page), redirect to dashboard
+    if (token && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 

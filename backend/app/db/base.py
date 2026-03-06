@@ -20,5 +20,10 @@ def _import_models():
     from app.db.models import provider  # noqa: F401
     from app.db.models import webhook_event  # noqa: F401
     from app.db.models import security_log  # noqa: F401
+    from app.db.models import user  # noqa: F401
+    from app.db.models import alert_rule  # noqa: F401
+    from app.db.models import audit_log  # noqa: F401
+    from app.db.models import webhook_retry  # noqa: F401
+    from app.db.models import analytics  # noqa: F401
 
 _import_models()

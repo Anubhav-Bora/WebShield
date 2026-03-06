@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_MAX_REQUESTS: int = 100
     RATE_LIMIT_WINDOW_SECONDS: int = 60
     
+    # Login Rate Limiting
+    LOGIN_RATE_LIMIT_ATTEMPTS: int = 5
+    LOGIN_RATE_LIMIT_WINDOW_SECONDS: int = 900  # 15 minutes
+    
     # Replay Protection
     REPLAY_PROTECTION_WINDOW_SECONDS: int = 300  # 5 minutes
     

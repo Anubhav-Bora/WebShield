@@ -104,7 +104,7 @@ export default function LoginPage() {
                     </form>
 
                     <div className="mt-6 text-center text-sm text-slate-400">
-                        Demo: username: <span className="text-indigo-400 font-mono">demo</span> / password: <span className="text-indigo-400 font-mono">demo123</span>
+                        Demo: username: <span className="text-indigo-400 font-mono">demo</span> / password: <span className="text-indigo-400 font-mono">Demo@12345</span>
                     </div>
                 </div>
             </div>

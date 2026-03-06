@@ -14,6 +14,7 @@ from app.db.models.security_log import SecurityLog
 from app.schemas.provider import ProviderCreate, ProviderUpdate, ProviderResponse
 from app.schemas.webhook import WebhookEventResponse
 from app.schemas.security_log import SecurityLogResponse
+from app.core.config import settings
 
 
 router = APIRouter()

@@ -12,6 +12,8 @@ from app.db.session import engine
 from app.api.routes.webhook import router as webhooks_router
 from app.api.routes.admin import router as admin_router
 from app.api.routes.auth import router as auth_router
+from app.api.routes.analytics import router as analytics_router
+from app.api.routes.webhooks_advanced import router as webhooks_advanced_router
 
 # Setup logging
 setup_logging()
@@ -108,6 +110,20 @@ app.include_router(
 app.include_router(
     auth_router,
     tags=["Authentication"]
+)
+
+# Include analytics routes
+app.include_router(
+    analytics_router,
+    prefix="/admin",
+    tags=["Analytics"]
+)
+
+# Include webhooks advanced routes
+app.include_router(
+    webhooks_advanced_router,
+    prefix="/admin",
+    tags=["Webhooks Advanced"]
 )
 
 @app.get("/health", tags=["Health"])
