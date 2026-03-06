@@ -6,13 +6,35 @@ import { formatDateTime, formatEventType, formatIPAddress } from '@/utils/format
 import { DataTable } from '@/components/ui/DataTable'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import gsap from 'gsap'
+import { Download, FileText } from 'lucide-react'
+import { exportSecurityLogsPDF, exportSecurityLogsCSV } from '@/services/export'
+import { useNotificationStore } from '@/store/useNotificationStore'
 
 export default function SecurityLogsPage() {
     const { data: logs, isLoading, error } = useSecurityLogs()
+    const { success, error: showError } = useNotificationStore()
 
     React.useEffect(() => {
         gsap.from('.page-header', { opacity: 0, x: -20, duration: 0.5, ease: 'power2.out' })
     }, [])
+
+    const handleExportPDF = async () => {
+        try {
+            await exportSecurityLogsPDF()
+            success('Export successful', 'Security logs exported as PDF')
+        } catch (err) {
+            showError('Export failed', 'Failed to export security logs as PDF')
+        }
+    }
+
+    const handleExportCSV = async () => {
+        try {
+            await exportSecurityLogsCSV()
+            success('Export successful', 'Security logs exported as CSV')
+        } catch (err) {
+            showError('Export failed', 'Failed to export security logs as CSV')
+        }
+    }
 
     const columns = [
         {
@@ -32,8 +54,28 @@ export default function SecurityLogsPage() {
         <DashboardLayout>
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8 page-header">
-                    <h1 className="text-4xl font-extrabold text-white mb-2">Security Logs</h1>
-                    <p className="text-slate-300 text-lg">Monitor security events and threats</p>
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <h1 className="text-4xl font-extrabold text-white mb-2">Security Logs</h1>
+                            <p className="text-slate-300 text-lg">Monitor security events and threats</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleExportPDF}
+                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition whitespace-nowrap"
+                            >
+                                <FileText size={18} />
+                                PDF
+                            </button>
+                            <button
+                                onClick={handleExportCSV}
+                                className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition whitespace-nowrap"
+                            >
+                                <Download size={18} />
+                                CSV
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {isLoading ? (

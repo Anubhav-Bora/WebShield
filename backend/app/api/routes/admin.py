@@ -387,8 +387,8 @@ async def get_security_log(
     return log
 
 
-@router.get("/logs/export")
-async def export_security_logs(
+@router.get("/logs/export/csv")
+async def export_security_logs_csv(
     event_type: str = Query(None),
     provider_name: str = Query(None),
     date_from: str = Query(None),
@@ -440,4 +440,184 @@ async def export_security_logs(
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=security_logs.csv"}
+    )
+
+
+# PDF Export endpoints
+@router.get("/logs/export/pdf")
+async def export_security_logs_pdf(
+    event_type: str = Query(None),
+    provider_name: str = Query(None),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    limit: int = Query(1000, ge=1, le=10000),
+    db: AsyncSession = Depends(get_db)
+):
+    """Export security logs as PDF."""
+    from fastapi.responses import StreamingResponse
+    from app.core.pdf_export import generate_security_logs_pdf
+    
+    stmt = select(SecurityLog)
+    
+    if event_type:
+        stmt = stmt.where(SecurityLog.event_type == event_type)
+    if provider_name:
+        stmt = stmt.where(SecurityLog.provider_name == provider_name)
+    if date_from:
+        from datetime import datetime
+        date_from_dt = datetime.fromisoformat(date_from)
+        stmt = stmt.where(SecurityLog.created_at >= date_from_dt)
+    if date_to:
+        from datetime import datetime
+        date_to_dt = datetime.fromisoformat(date_to)
+        stmt = stmt.where(SecurityLog.created_at <= date_to_dt)
+    
+    stmt = stmt.order_by(SecurityLog.created_at.desc()).limit(limit)
+    result = await db.execute(stmt)
+    logs = result.scalars().all()
+    
+    # Convert to dict for PDF generation
+    logs_data = [
+        {
+            'id': str(log.id),
+            'provider_name': log.provider_name,
+            'event_type': log.event_type,
+            'ip_address': log.ip_address,
+            'request_id': log.request_id,
+            'created_at': log.created_at.isoformat()
+        }
+        for log in logs
+    ]
+    
+    # Generate PDF
+    pdf_buffer = generate_security_logs_pdf(logs_data)
+    
+    return StreamingResponse(
+        iter([pdf_buffer.getvalue()]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=security_logs.pdf"}
+    )
+
+
+@router.get("/webhooks/export/pdf")
+async def export_webhooks_pdf(
+    provider_name: str = Query(None),
+    limit: int = Query(1000, ge=1, le=10000),
+    db: AsyncSession = Depends(get_db)
+):
+    """Export webhook events as PDF."""
+    from fastapi.responses import StreamingResponse
+    from app.core.pdf_export import generate_webhook_events_pdf
+    
+    stmt = select(WebhookEvent)
+    
+    if provider_name:
+        provider_stmt = select(Provider).where(Provider.name == provider_name)
+        provider_result = await db.execute(provider_stmt)
+        provider = provider_result.scalars().first()
+        if provider:
+            stmt = stmt.where(WebhookEvent.provider_id == provider.id)
+    
+    stmt = stmt.order_by(WebhookEvent.received_at.desc()).limit(limit)
+    result = await db.execute(stmt)
+    webhooks = result.scalars().all()
+    
+    # Convert to dict for PDF generation
+    webhooks_data = [
+        {
+            'id': str(webhook.id),
+            'request_id': webhook.request_id,
+            'source': webhook.source,
+            'signature_valid': webhook.signature_valid,
+            'forwarded': webhook.forwarded,
+            'response_status': webhook.response_status,
+            'received_at': webhook.received_at.isoformat()
+        }
+        for webhook in webhooks
+    ]
+    
+    # Generate PDF
+    pdf_buffer = generate_webhook_events_pdf(webhooks_data)
+    
+    return StreamingResponse(
+        iter([pdf_buffer.getvalue()]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=webhook_events.pdf"}
+    )
+
+
+
+@router.get("/dashboard/export/pdf")
+async def export_dashboard_pdf(db: AsyncSession = Depends(get_db)):
+    """Export complete dashboard as PDF with all metrics and data."""
+    from fastapi.responses import StreamingResponse
+    from app.core.pdf_export import generate_dashboard_pdf
+    
+    # Get providers count
+    providers_stmt = select(Provider)
+    providers_result = await db.execute(providers_stmt)
+    providers = providers_result.scalars().all()
+    providers_count = len(providers)
+    
+    # Get webhook stats
+    webhooks_stmt = select(WebhookEvent)
+    webhooks_result = await db.execute(webhooks_stmt)
+    webhooks = webhooks_result.scalars().all()
+    
+    webhooks_total = len(webhooks)
+    webhooks_successful = sum(1 for w in webhooks if w.forwarded and w.response_status and 200 <= w.response_status < 300)
+    webhooks_failed = sum(1 for w in webhooks if w.forwarded and w.response_status and w.response_status >= 400)
+    success_rate = (webhooks_successful / webhooks_total * 100) if webhooks_total > 0 else 0
+    
+    # Get security events
+    security_stmt = select(SecurityLog)
+    security_result = await db.execute(security_stmt)
+    security_logs_data = security_result.scalars().all()
+    security_events = len(security_logs_data)
+    
+    # Convert webhook events to dict
+    webhook_events_data = [
+        {
+            'request_id': w.request_id,
+            'source': w.source,
+            'response_status': w.response_status,
+            'received_at': w.received_at.isoformat() if w.received_at else None
+        }
+        for w in webhooks[:20]
+    ]
+    
+    # Convert security logs to dict
+    security_logs_dict = [
+        {
+            'event_type': log.event_type,
+            'provider_name': log.provider_name,
+            'ip_address': log.ip_address,
+            'created_at': log.created_at.isoformat() if log.created_at else None
+        }
+        for log in security_logs_data[:20]
+    ]
+    
+    # Get traffic sources
+    traffic_sources = {}
+    for webhook in webhooks:
+        source = webhook.source or 'Unknown'
+        traffic_sources[source] = traffic_sources.get(source, 0) + 1
+    
+    # Generate PDF
+    pdf_buffer = generate_dashboard_pdf(
+        providers_count=providers_count,
+        webhooks_total=webhooks_total,
+        webhooks_successful=webhooks_successful,
+        webhooks_failed=webhooks_failed,
+        success_rate=success_rate,
+        security_events=security_events,
+        webhook_events=webhook_events_data,
+        security_logs=security_logs_dict,
+        traffic_sources=traffic_sources
+    )
+    
+    return StreamingResponse(
+        iter([pdf_buffer.getvalue()]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=dashboard_report.pdf"}
     )

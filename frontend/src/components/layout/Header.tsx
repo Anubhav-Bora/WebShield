@@ -54,11 +54,6 @@ export function Header() {
                 </div>
 
                 <div className="flex items-center gap-6">
-                    <button className="relative p-2 text-slate-400 hover:text-white transition-colors bg-white/5 rounded-full">
-                        <Bell size={18} />
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                    </button>
-
                     <div className="flex items-center gap-4 pl-6 border-l border-white/10">
                         <div className="flex items-center gap-3">
                             <div className="text-right hidden md:block">

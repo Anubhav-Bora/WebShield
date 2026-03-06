@@ -10,14 +10,27 @@ import { StatCardSkeleton } from '@/components/ui/StatCardSkeleton'
 import { AnimatedChart } from '@/components/ui/AnimatedChart'
 import { DataTable } from '@/components/ui/DataTable'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { User } from 'lucide-react'
+import { User, Download } from 'lucide-react'
+import { exportDashboardPDF } from '@/services/export'
+import { useNotificationStore } from '@/store/useNotificationStore'
 
 export default function DashboardPage() {
+    const { success, error: showError } = useNotificationStore()
+
     // Fetch data - React Query handles caching automatically
     // Use isFetching to show loading during background refetches
     const { data: providers = [], isLoading: providersLoading, isFetching: providersFetching } = useProviders()
     const { data: webhookStats, isLoading: statsLoading, isFetching: statsFetching } = useWebhookStats()
     const { data: securityStats, isLoading: securityLoading, isFetching: securityFetching } = useSecurityStats()
+
+    const handleExportDashboard = async () => {
+        try {
+            await exportDashboardPDF()
+            success('Export successful', 'Dashboard exported as PDF')
+        } catch (err) {
+            showError('Export failed', 'Failed to export dashboard as PDF')
+        }
+    }
     const { data: webhookEvents = [], isLoading: eventsLoading, isFetching: eventsFetching } = useWebhookEvents(undefined, 100, 0)
 
     // Show loading state if initial load OR if all queries are fetching
@@ -106,6 +119,13 @@ export default function DashboardPage() {
                             Hey Admin— Here's what's happening with your gateway today
                         </p>
                     </div>
+                    <button
+                        onClick={handleExportDashboard}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition"
+                    >
+                        <Download size={18} />
+                        Export PDF
+                    </button>
                 </div>
 
                 {/* Stats Grid - Show all skeletons or all cards together */}
@@ -152,7 +172,7 @@ export default function DashboardPage() {
                     {/* Animated Traffic Chart */}
                     <div className="lg:col-span-2 relative h-[420px]">
                         <AnimatedChart
-                            title="Sales Report"
+                            title="Webhook Traffic"
                             data={chartData}
                             dataKey="requests"
                             xAxisKey="time"

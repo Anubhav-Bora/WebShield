@@ -57,16 +57,13 @@ export function AnimatedChart({ title, data, dataKey, xAxisKey, delay = 0 }: Ani
             className="relative rounded-2xl p-6 border border-slate-700/50 hover:border-emerald-500/30 transition-all duration-500 group overflow-hidden bg-gradient-to-br from-slate-800/20 to-transparent"
         >
             <div className="relative z-10">
-                <div className="flex justify-between items-center mb-6">
+                <div className="mb-6">
                     <h2
                         ref={titleRef}
                         className="text-xl font-bold text-white flex items-center gap-3"
                     >
                         {title}
                     </h2>
-                    <button className="px-3 py-1.5 rounded-md bg-white/5 text-slate-300 text-sm hover:bg-white/10 transition-colors border border-white/5">
-                        Export PDF
-                    </button>
                 </div>
 
                 <ResponsiveContainer width="100%" height={300}>

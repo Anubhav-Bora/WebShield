@@ -57,9 +57,6 @@ function Toast({ id, type, title, message, duration = 5000, onClose }: ToastProp
         <div
             className={`glass rounded-xl border ${colors[type]} p-4 shadow-2xl animate-slideInRight flex items-start gap-3 min-w-[320px]`}
         >
-            <div className="flex-shrink-0 mt-0.5">
-                {icons[type]}
-            </div>
             <div className="flex-1 min-w-0">
                 <h4 className="text-white font-semibold text-sm mb-1">{title}</h4>
                 {message && (
