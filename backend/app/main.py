@@ -9,6 +9,8 @@ import logging
 
 from app.core.config import settings, setup_logging
 from app.db.session import engine
+from app.core.error_handler import global_exception_handler, validation_exception_handler
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.api.routes.webhook import router as webhooks_router
 from app.api.routes.admin import router as admin_router
 from app.api.routes.auth import router as auth_router
@@ -83,6 +85,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Add global exception handlers
+app.add_exception_handler(Exception, global_exception_handler)
+from fastapi.exceptions import RequestValidationError
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -91,6 +98,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Include webhook routes
 app.include_router(

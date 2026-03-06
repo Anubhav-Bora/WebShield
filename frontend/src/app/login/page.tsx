@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { login } from '@/services/auth'
+import { login, getCurrentUser } from '@/services/auth'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { LogIn, Mail, Lock } from 'lucide-react'
@@ -24,19 +24,14 @@ export default function LoginPage() {
         try {
             const authResponse = await login(formData)
 
-            // Decode JWT to get user info (simple decode, not verification)
-            const payload = JSON.parse(atob(authResponse.access_token.split('.')[1]))
+            // Store token in localStorage first
+            localStorage.setItem('auth_token', authResponse.access_token)
 
-            const user = {
-                id: payload.sub,
-                username: payload.username,
-                email: '',
-                full_name: payload.username,
-                is_active: true
-            }
+            // Verify JWT token by calling /auth/me endpoint
+            const currentUser = await getCurrentUser()
 
-            setAuth(user, authResponse.access_token)
-            success('Welcome back!', `Logged in as ${user.username}`)
+            setAuth(currentUser, authResponse.access_token)
+            success('Welcome back!', `Logged in as ${currentUser.username}`)
             router.push('/dashboard')
         } catch (err: any) {
             error('Login failed', err.detail || 'Invalid credentials')
