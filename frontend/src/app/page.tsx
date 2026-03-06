@@ -111,19 +111,13 @@ export default function Home() {
 
                     <div className="flex flex-col sm:flex-row gap-5 justify-center mt-12">
                         <Link
-                            href="/dashboard"
+                            href="/login"
                             className="hero-btn group px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-[0_0_40px_-10px_rgba(99,102,241,0.5)] border border-indigo-400/20 hover:scale-105 flex items-center justify-center gap-3"
                         >
-                            Open Dashboard
+                            Sign In
                             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>
-                        </Link>
-                        <Link
-                            href="/providers"
-                            className="hero-btn px-8 py-4 bg-slate-800/30 hover:bg-slate-800/60 backdrop-blur-xl border border-slate-700 hover:border-slate-500 text-slate-200 rounded-xl font-semibold transition-all hover:scale-105"
-                        >
-                            View Docs
                         </Link>
                     </div>
                 </div>

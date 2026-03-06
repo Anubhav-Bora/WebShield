@@ -33,7 +33,7 @@ export default function SecurityLogsPage() {
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8 page-header">
                     <h1 className="text-4xl font-extrabold text-white mb-2">Security Logs</h1>
-                    <p className="text-slate-400 text-lg">Monitor security events and threats</p>
+                    <p className="text-slate-300 text-lg">Monitor security events and threats</p>
                 </div>
 
                 {isLoading ? (

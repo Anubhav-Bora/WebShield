@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
 
@@ -10,6 +10,25 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+    const [isHydrated, setIsHydrated] = useState(false)
+
+    useEffect(() => {
+        setIsHydrated(true)
+    }, [])
+
+    if (!isHydrated) {
+        return (
+            <div className="min-h-screen bg-[#0d0d12] text-slate-300 font-sans flex font-medium">
+                <div className="flex-1 flex flex-col min-h-screen">
+                    <div className="flex-1 overflow-x-hidden overflow-y-auto bg-[#0d0d12]">
+                        <div className="container mx-auto p-8 relative">
+                            {children}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-[#0d0d12] text-slate-300 font-sans flex font-medium">

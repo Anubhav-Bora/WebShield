@@ -6,8 +6,8 @@ export function middleware(request: NextRequest) {
         request.headers.get('authorization')?.replace('Bearer ', '')
 
     // Public routes that don't require authentication
-    const publicRoutes = ['/login', '/register']
-    const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route))
+    const publicRoutes = ['/', '/login', '/register']
+    const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route))
 
     // If trying to access protected route without token, redirect to login
     if (!token && !isPublicRoute) {

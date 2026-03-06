@@ -63,7 +63,7 @@ export default function ProvidersPage() {
                 <div className="flex justify-between items-center mb-8 page-header">
                     <div>
                         <h1 className="text-4xl font-extrabold text-white mb-2">Providers</h1>
-                        <p className="text-slate-400 text-lg">Manage your webhook providers</p>
+                        <p className="text-slate-300 text-lg">Manage your webhook providers</p>
                     </div>
                     <Link
                         href="/providers/create"

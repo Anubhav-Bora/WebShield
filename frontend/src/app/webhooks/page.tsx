@@ -45,7 +45,7 @@ export default function WebhooksPage() {
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8 page-header">
                     <h1 className="text-4xl font-extrabold text-white mb-2">Webhooks</h1>
-                    <p className="text-slate-400 text-lg">View and manage webhook events</p>
+                    <p className="text-slate-300 text-lg">View and manage webhook events</p>
                 </div>
 
                 {isLoading ? (

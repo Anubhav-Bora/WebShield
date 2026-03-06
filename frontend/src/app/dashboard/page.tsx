@@ -28,6 +28,28 @@ export default function DashboardPage() {
     // Calculate success rate
     const successRate = Math.round(((webhookStats?.successful || 0) / (webhookStats?.total || 1)) * 100)
 
+    // Calculate traffic sources from webhook events
+    const trafficSources = React.useMemo(() => {
+        if (!webhookEvents || webhookEvents.length === 0) {
+            return []
+        }
+
+        const sourceMap: Record<string, number> = {}
+        webhookEvents.forEach((event: any) => {
+            const source = event.source || 'Unknown'
+            sourceMap[source] = (sourceMap[source] || 0) + 1
+        })
+
+        const total = Object.values(sourceMap).reduce((a, b) => a + b, 0)
+        return Object.entries(sourceMap)
+            .map(([source, count]) => ({
+                source,
+                count,
+                percentage: total > 0 ? (count / total) * 100 : 0
+            }))
+            .sort((a, b) => b.count - a.count)
+    }, [webhookEvents])
+
     // Transform webhook events into chart data
     const chartData = React.useMemo(() => {
         if (!webhookEvents || webhookEvents.length === 0) {
@@ -100,32 +122,24 @@ export default function DashboardPage() {
                             <StatCard
                                 title="Total Providers"
                                 value={providers?.length || 0}
-                                trend="+2 this week"
-                                trendUp={true}
                                 delay={0}
                                 colorTheme="emerald"
                             />
                             <StatCard
                                 title="Total Webhooks"
                                 value={webhookStats?.total || 0}
-                                trend="+15% vs yesterday"
-                                trendUp={true}
                                 delay={0.1}
                                 colorTheme="blue"
                             />
                             <StatCard
                                 title="Delivery Success"
                                 value={`${successRate}%`}
-                                trend="Stable"
-                                trendUp={true}
                                 delay={0.2}
                                 colorTheme="dark"
                             />
                             <StatCard
                                 title="Security Events"
                                 value={securityStats?.total_events || 0}
-                                trend="-5 threats blocked"
-                                trendUp={false}
                                 delay={0.3}
                                 colorTheme="dark"
                             />
@@ -163,16 +177,23 @@ export default function DashboardPage() {
                             <h2 className="text-xl font-bold text-white mb-6">
                                 Traffic Sources
                             </h2>
-                            <div className="space-y-4">
-                                {['Direct', 'Referral', 'Facebook', 'Google'].map((source) => (
-                                    <div key={source} className="flex flex-col gap-2 py-2 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 rounded-lg transition-colors cursor-pointer">
-                                        <p className="text-slate-300 font-medium text-sm">{source}</p>
-                                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                                            <div className="h-full bg-slate-500 rounded-full" style={{ width: `${Math.random() * 60 + 20}%` }}></div>
+                            {trafficSources.length === 0 ? (
+                                <p className="text-slate-400 text-sm">No traffic data available</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {trafficSources.map((source) => (
+                                        <div key={source.source} className="flex flex-col gap-2 py-2 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 rounded-lg transition-colors cursor-pointer">
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-slate-300 font-medium text-sm">{source.source}</p>
+                                                <p className="text-xs text-slate-500">{source.count}</p>
+                                            </div>
+                                            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                                <div className="h-full bg-slate-500 rounded-full" style={{ width: `${source.percentage}%` }}></div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Recent Customers (formerly Quick Actions) */}

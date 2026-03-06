@@ -45,7 +45,7 @@ export default function CreateProviderPage() {
                         ← Back to Providers
                     </Link>
                     <h1 className="text-4xl font-extrabold text-white mb-2">Create Provider</h1>
-                    <p className="text-slate-400">Add a new webhook provider to your gateway</p>
+                    <p className="text-slate-300">Add a new webhook provider to your gateway</p>
                 </div>
 
                 {/* Form */}
