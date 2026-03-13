@@ -64,6 +64,14 @@ class WebhookEvent(Base):
         comment="Webhook payload (JSON)"
     )
     
+    # SHA256 hash of payload for integrity verification
+    payload_hash: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        index=True,
+        comment="SHA256 hash of payload for integrity verification"
+    )
+    
     # Request headers (useful for debugging)
     headers: Mapped[dict] = mapped_column(
         JSONB,

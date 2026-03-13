@@ -225,5 +225,4 @@ async def process_alert_rules(db: AsyncSession) -> None:
             # Trigger alert
             await trigger_alert(db, alert_rule, metric_value)
             
-            # TODO: Send notifications via configured channels
-            # await send_alert_notifications(db, alert_rule, metric_value)
+            # ...existing code...

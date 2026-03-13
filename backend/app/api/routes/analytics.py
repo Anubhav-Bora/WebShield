@@ -23,21 +23,7 @@ from app.schemas.alert import (
 router = APIRouter()
 
 
-# Alert Rules Endpoints
-@router.get("/alert-rules", response_model=List[AlertRuleResponse])
-async def list_alert_rules(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """List all alert rules for current user. Requires authentication."""
-    stmt = select(AlertRule).where(
-        AlertRule.user_id == current_user.id
-    ).order_by(AlertRule.created_at.desc())
-    
-    result = await db.execute(stmt)
-    rules = result.scalars().all()
-    
-    return [AlertRuleResponse.from_orm(r) for r in rules]
+    # ...existing code...
 
 
 @router.get("/alert-history", response_model=List[AlertHistoryResponse])
@@ -64,7 +50,7 @@ async def get_alert_history(
 
 
 # Analytics Endpoints
-@router.get("/analytics/webhooks", response_model=List[WebhookAnalyticsResponse])
+@router.get("/analytics/webhooks", response_model=List[dict])
 async def get_webhook_analytics(
     provider_id: UUID = Query(None),
     days: int = Query(7, ge=1, le=90),
@@ -72,7 +58,15 @@ async def get_webhook_analytics(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get webhook analytics. Requires authentication."""
+    from sqlalchemy import func
+    from collections import defaultdict
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
     cutoff_date = datetime.utcnow() - timedelta(days=days)
+    
+    logger.info(f"Fetching analytics for days={days}, provider_id={provider_id}, cutoff_date={cutoff_date}")
     
     stmt = select(WebhookAnalytics).where(
         WebhookAnalytics.hour >= cutoff_date
@@ -81,12 +75,78 @@ async def get_webhook_analytics(
     if provider_id:
         stmt = stmt.where(WebhookAnalytics.provider_id == provider_id)
     
-    stmt = stmt.order_by(WebhookAnalytics.hour.desc())
+    stmt = stmt.order_by(WebhookAnalytics.hour.asc())
     
     result = await db.execute(stmt)
     analytics = result.scalars().all()
     
-    return [WebhookAnalyticsResponse.from_orm(a) for a in analytics]
+    logger.info(f"Raw query returned {len(analytics)} records")
+    
+    if not analytics:
+        logger.warning("No analytics found!")
+        return []
+    
+    # If no provider_id specified, aggregate by hour across all providers
+    if not provider_id:
+        aggregated = defaultdict(lambda: {
+            'hour': None,
+            'total_webhooks': 0,
+            'successful_webhooks': 0,
+            'failed_webhooks': 0,
+            'pending_webhooks': 0,
+            'success_rate': 0.0,
+            'avg_latency_ms': 0.0,
+            'p50_latency_ms': 0.0,
+            'p95_latency_ms': 0.0,
+            'p99_latency_ms': 0.0,
+            'count': 0
+        })
+        
+        for a in analytics:
+            hour_key = a.hour.isoformat()
+            aggregated[hour_key]['hour'] = a.hour.isoformat()
+            aggregated[hour_key]['total_webhooks'] += a.total_webhooks
+            aggregated[hour_key]['successful_webhooks'] += a.successful_webhooks
+            aggregated[hour_key]['failed_webhooks'] += a.failed_webhooks
+            aggregated[hour_key]['pending_webhooks'] += a.pending_webhooks
+            aggregated[hour_key]['avg_latency_ms'] += a.avg_latency_ms
+            aggregated[hour_key]['p50_latency_ms'] += a.p50_latency_ms
+            aggregated[hour_key]['p95_latency_ms'] += a.p95_latency_ms
+            aggregated[hour_key]['p99_latency_ms'] += a.p99_latency_ms
+            aggregated[hour_key]['count'] += 1
+        
+        # Average the aggregated values and sort by hour
+        result_list = []
+        for hour_key in sorted(aggregated.keys()):
+            data = aggregated[hour_key]
+            if data['count'] > 0:
+                data['success_rate'] = (data['successful_webhooks'] / data['total_webhooks'] * 100) if data['total_webhooks'] > 0 else 0
+                data['avg_latency_ms'] /= data['count']
+                data['p50_latency_ms'] /= data['count']
+                data['p95_latency_ms'] /= data['count']
+                data['p99_latency_ms'] /= data['count']
+                result_list.append(data)
+        
+        logger.info(f"Returning {len(result_list)} aggregated points")
+        return result_list
+    
+    # If provider_id specified, return data for that provider
+    logger.info(f"Returning {len(analytics)} points for provider {provider_id}")
+    return [
+        {
+            'hour': a.hour.isoformat(),
+            'total_webhooks': a.total_webhooks,
+            'successful_webhooks': a.successful_webhooks,
+            'failed_webhooks': a.failed_webhooks,
+            'pending_webhooks': a.pending_webhooks,
+            'success_rate': a.success_rate,
+            'avg_latency_ms': a.avg_latency_ms,
+            'p50_latency_ms': a.p50_latency_ms,
+            'p95_latency_ms': a.p95_latency_ms,
+            'p99_latency_ms': a.p99_latency_ms,
+        }
+        for a in analytics
+    ]
 
 
 @router.get("/analytics/security", response_model=List[SecurityAnalyticsResponse])

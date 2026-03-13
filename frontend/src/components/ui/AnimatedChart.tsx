@@ -51,6 +51,9 @@ export function AnimatedChart({ title, data, dataKey, xAxisKey, delay = 0 }: Ani
         return null
     }
 
+    // Calculate tick interval based on data length
+    const tickInterval = Math.ceil(data.length / 12) // Show ~12 ticks max
+
     return (
         <div
             ref={containerRef}
@@ -64,10 +67,11 @@ export function AnimatedChart({ title, data, dataKey, xAxisKey, delay = 0 }: Ani
                     >
                         {title}
                     </h2>
+                    <p className="text-sm text-slate-400 mt-2">Data points: {data.length}</p>
                 </div>
 
                 <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={data}>
+                    <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
@@ -82,6 +86,7 @@ export function AnimatedChart({ title, data, dataKey, xAxisKey, delay = 0 }: Ani
                             tickLine={false}
                             axisLine={false}
                             dy={10}
+                            interval={tickInterval - 1}
                         />
                         <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#475569', strokeWidth: 1, strokeDasharray: '4 4' }} />
                         <Area

@@ -86,9 +86,9 @@ app = FastAPI(
 )
 
 # Add global exception handlers
-app.add_exception_handler(Exception, global_exception_handler)
 from fastapi.exceptions import RequestValidationError
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, global_exception_handler)
 
 # Configure CORS
 app.add_middleware(

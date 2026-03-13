@@ -13,9 +13,17 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import { User, Download } from 'lucide-react'
 import { exportDashboardPDF } from '@/services/export'
 import { useNotificationStore } from '@/store/useNotificationStore'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useQuery } from '@tanstack/react-query'
 
 export default function DashboardPage() {
     const { success, error: showError } = useNotificationStore()
+    const token = useAuthStore((state) => state.token)
+    const [isHydrated, setIsHydrated] = React.useState(false)
+
+    React.useEffect(() => {
+        setIsHydrated(true)
+    }, [])
 
     // Fetch data - React Query handles caching automatically
     // Use isFetching to show loading during background refetches
@@ -63,14 +71,53 @@ export default function DashboardPage() {
             .sort((a, b) => b.count - a.count)
     }, [webhookEvents])
 
-    // Transform webhook events into chart data
+    // Fetch analytics data for the chart
+    const { data: analyticsData = [], isLoading: analyticsLoading, error: analyticsError } = useQuery({
+        queryKey: ['webhookAnalytics', token],
+        queryFn: async () => {
+            console.log('Fetching analytics with token:', token?.substring(0, 20) + '...')
+            const response = await fetch('http://localhost:8000/admin/analytics/webhooks?days=7', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            if (!response.ok) {
+                const errorData = await response.json()
+                console.error('Analytics error:', errorData)
+                throw new Error(errorData.detail || 'Failed to fetch analytics')
+            }
+            const data = await response.json()
+            console.log('Analytics data received:', data.length, 'points')
+            return data
+        },
+        enabled: !!token && isHydrated,
+        staleTime: 30000,
+    })
+
+    // Transform analytics data into chart data
     const chartData = React.useMemo(() => {
+        // Try to use analytics data first
+        if (analyticsData && analyticsData.length > 0) {
+            return analyticsData
+                .sort((a: any, b: any) => new Date(a.hour).getTime() - new Date(b.hour).getTime())
+                .map((item: any) => ({
+                    time: new Date(item.hour).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    }),
+                    requests: item.total_webhooks
+                }))
+        }
+
+        // Fallback to webhook events if analytics not available
         if (!webhookEvents || webhookEvents.length === 0) {
             return []
         }
 
         const timeGroups: Record<string, number> = {}
-
         webhookEvents.forEach((event: any) => {
             const date = new Date(event.received_at)
             const minutes = Math.floor(date.getMinutes() / 5) * 5
@@ -81,7 +128,7 @@ export default function DashboardPage() {
         return Object.entries(timeGroups)
             .map(([time, count]) => ({ time, requests: count }))
             .slice(-20)
-    }, [webhookEvents])
+    }, [analyticsData, webhookEvents])
 
     // Animate page entrance
     useEffect(() => {

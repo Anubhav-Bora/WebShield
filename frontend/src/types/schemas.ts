@@ -100,14 +100,17 @@ export const WebhookEventSchema = z.object({
     id: z.string().uuid(),
     provider_id: z.string().uuid(),
     request_id: z.string(),
+    source: z.string(),
     payload: z.record(z.any()),
+    payload_hash: z.string().optional(),
     headers: z.record(z.string()),
     signature_valid: z.boolean(),
     forwarded: z.boolean(),
     received_at: z.string().datetime(),
     forwarded_at: z.string().datetime().optional(),
     response_status: z.number().optional(),
-    response_body: z.string().optional()
+    response_body: z.string().optional(),
+    error_message: z.string().optional()
 })
 
 export const SecurityLogSchema = z.object({

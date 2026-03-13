@@ -55,7 +55,14 @@ export default function AnalyticsPage() {
                 }
             })
             if (!response.ok) throw new Error('Failed to fetch webhook analytics')
-            return response.json()
+            const data = await response.json()
+            console.log('Raw API response:', data)
+            console.log('API response length:', data.length)
+            if (data.length > 0) {
+                console.log('First API point:', data[0])
+                console.log('First API point keys:', Object.keys(data[0]))
+            }
+            return data
         },
         enabled: !!token && isHydrated,
         staleTime: 30000,
@@ -65,16 +72,29 @@ export default function AnalyticsPage() {
     const chartData = React.useMemo(() => {
         if (!webhookAnalytics || webhookAnalytics.length === 0) return []
 
-        return webhookAnalytics
+        const sorted = webhookAnalytics
             .sort((a: WebhookAnalytics, b: WebhookAnalytics) =>
                 new Date(a.hour).getTime() - new Date(b.hour).getTime()
             )
             .map((item: WebhookAnalytics) => ({
-                time: new Date(item.hour).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                time: new Date(item.hour).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                }),
                 successful: item.successful_webhooks,
                 failed: item.failed_webhooks,
+                total: item.total_webhooks,
                 latency: Math.round(item.avg_latency_ms)
             }))
+
+        console.log('Chart data points:', sorted.length)
+        console.log('First few points:', sorted.slice(0, 5))
+        console.log('Last few points:', sorted.slice(-5))
+
+        return sorted
     }, [webhookAnalytics])
 
     if (!isHydrated) {
@@ -149,10 +169,11 @@ export default function AnalyticsPage() {
                 ) : chartData.length > 0 ? (
                     <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700 p-8 chart-container">
                         <h2 className="text-xl font-bold text-white mb-6">Webhook Success/Failure Trend</h2>
+                        <div className="text-sm text-slate-400 mb-4">Total data points: {chartData.length}</div>
                         <AnimatedChart
                             title="Webhook Metrics"
                             data={chartData}
-                            dataKey="successful"
+                            dataKey="total"
                             xAxisKey="time"
                         />
                     </div>

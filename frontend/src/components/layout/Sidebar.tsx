@@ -38,7 +38,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       label: 'GATEWAY',
       items: [
         { href: '/providers', label: 'Providers', icon: Package },
-        { href: '/webhooks', label: 'Webhooks', icon: LinkIcon },
+        { href: '/webhooks/logs', label: 'Webhooks', icon: LinkIcon },
       ],
     },
     {

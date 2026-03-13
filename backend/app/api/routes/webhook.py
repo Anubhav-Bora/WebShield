@@ -9,6 +9,8 @@ from sqlalchemy import select
 from datetime import datetime, timedelta
 import json
 import uuid
+import logging
+import asyncio
 
 from app.db.session import get_db
 from app.db.models.provider import Provider
@@ -17,9 +19,11 @@ from app.core.security import verify_hmac_signature
 from app.core.rate_limit import check_rate_limit
 from app.core.forwarding import forward_webhook
 from app.core.security_logger import log_security_event
+from app.core.payload_integrity import calculate_payload_hash, detect_payload_changes
 from app.core.config import settings
 from app.schemas.webhook import WebhookRequest, WebhookResponse
-import asyncio
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter()
@@ -223,6 +227,9 @@ async def receive_webhook(
             detail="Invalid JSON payload"
         )
     
+    # Calculate payload hash for integrity verification
+    payload_hash = calculate_payload_hash(payload)
+    
     # Store webhook event in database
     webhook_event = WebhookEvent(
         id=uuid.uuid4(),
@@ -230,6 +237,7 @@ async def receive_webhook(
         request_id=request_id,
         source=provider.name,
         payload=payload,
+        payload_hash=payload_hash,
         headers=dict(request.headers),
         signature_valid=True,
         forwarded=False,
@@ -239,6 +247,13 @@ async def receive_webhook(
     db.add(webhook_event)
     await db.commit()
     await db.refresh(webhook_event)
+    
+    # Calculate analytics for this hour
+    from app.core.analytics_calculator import calculate_webhook_analytics_for_hour
+    try:
+        await calculate_webhook_analytics_for_hour(db, provider.id, datetime.utcnow())
+    except Exception as e:
+        logger.error(f"Failed to calculate analytics: {str(e)}")
     
     # Forward webhook to internal service (async, don't wait)
     # Pass webhook data instead of session to avoid session closure issues
@@ -257,3 +272,147 @@ async def receive_webhook(
         message="Webhook received and queued for processing",
         webhook_id=str(webhook_event.id)
     )
+
+
+@router.post("/verify/{webhook_id}", tags=["Webhooks"])
+async def verify_webhook_integrity(
+    webhook_id: str,
+    payload: dict,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Verify if a webhook payload has been tampered with.
+
+    Compares the provided payload against the stored hash.
+
+    Args:
+        webhook_id: ID of the webhook event
+        payload: Current payload to verify
+        db: Database session
+
+    Returns:
+        Verification result with tampering details
+    """
+    try:
+        webhook_uuid = uuid.UUID(webhook_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid webhook ID format"
+        )
+
+    # Get webhook from database
+    result = await db.execute(
+        select(WebhookEvent).where(WebhookEvent.id == webhook_uuid)
+    )
+    webhook = result.scalar_one_or_none()
+
+    if not webhook:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Webhook not found"
+        )
+
+    # Calculate current hash
+    current_hash = calculate_payload_hash(payload)
+
+    # Compare hashes
+    is_valid = current_hash == webhook.payload_hash
+
+    if not is_valid:
+        # Log tampering attempt
+        changes = detect_payload_changes(webhook.payload, payload)
+        await log_security_event(
+            db,
+            webhook.source,
+            "payload_tampering_detected",
+            "verification_check",
+            request_id=webhook.request_id,
+            details={
+                "webhook_id": webhook_id,
+                "expected_hash": webhook.payload_hash,
+                "actual_hash": current_hash,
+                "changes": changes
+            }
+        )
+
+    return {
+        "webhook_id": webhook_id,
+        "is_valid": is_valid,
+        "expected_hash": webhook.payload_hash,
+        "actual_hash": current_hash,
+        "tampering_detected": not is_valid,
+        "changes": detect_payload_changes(webhook.payload, payload) if not is_valid else None
+    }
+
+
+@router.post("/verify/{webhook_id}", tags=["Webhooks"])
+async def verify_webhook_integrity(
+    webhook_id: str,
+    payload: dict,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Verify if a webhook payload has been tampered with.
+    
+    Compares the provided payload against the stored hash.
+    
+    Args:
+        webhook_id: ID of the webhook event
+        payload: Current payload to verify
+        db: Database session
+    
+    Returns:
+        Verification result with tampering details
+    """
+    try:
+        webhook_uuid = uuid.UUID(webhook_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid webhook ID format"
+        )
+    
+    # Get webhook from database
+    result = await db.execute(
+        select(WebhookEvent).where(WebhookEvent.id == webhook_uuid)
+    )
+    webhook = result.scalar_one_or_none()
+    
+    if not webhook:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Webhook not found"
+        )
+    
+    # Calculate current hash
+    current_hash = calculate_payload_hash(payload)
+    
+    # Compare hashes
+    is_valid = current_hash == webhook.payload_hash
+    
+    if not is_valid:
+        # Log tampering attempt
+        changes = detect_payload_changes(webhook.payload, payload)
+        await log_security_event(
+            db,
+            webhook.source,
+            "payload_tampering_detected",
+            "verification_check",
+            request_id=webhook.request_id,
+            details={
+                "webhook_id": webhook_id,
+                "expected_hash": webhook.payload_hash,
+                "actual_hash": current_hash,
+                "changes": changes
+            }
+        )
+    
+    return {
+        "webhook_id": webhook_id,
+        "is_valid": is_valid,
+        "expected_hash": webhook.payload_hash,
+        "actual_hash": current_hash,
+        "tampering_detected": not is_valid,
+        "changes": detect_payload_changes(webhook.payload, payload) if not is_valid else None
+    }

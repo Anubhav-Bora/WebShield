@@ -3,20 +3,18 @@ PDF export utilities for reports and logs.
 """
 from io import BytesIO
 from datetime import datetime
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import landscape, letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, KeepTogether
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.graphics.shapes import Drawing
-from reportlab.graphics.charts.barcharts import BarChart
-from reportlab.graphics.charts.linecharts import LineChart
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+import json
 
 
 def generate_security_logs_pdf(logs: list, filename: str = "security_logs.pdf") -> BytesIO:
     """
-    Generate a PDF report of security logs.
+    Generate a PDF report of security logs with details.
     
     Args:
         logs: List of security log dictionaries
@@ -26,25 +24,25 @@ def generate_security_logs_pdf(logs: list, filename: str = "security_logs.pdf") 
         BytesIO object containing the PDF
     """
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=0.4*inch, bottomMargin=0.4*inch)
     
     # Styles
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=24,
+        fontSize=20,
         textColor=colors.HexColor('#1f2937'),
-        spaceAfter=30,
+        spaceAfter=12,
         alignment=TA_CENTER
     )
     
     heading_style = ParagraphStyle(
         'CustomHeading',
         parent=styles['Heading2'],
-        fontSize=12,
+        fontSize=10,
         textColor=colors.HexColor('#374151'),
-        spaceAfter=12
+        spaceAfter=8
     )
     
     # Content
@@ -53,7 +51,7 @@ def generate_security_logs_pdf(logs: list, filename: str = "security_logs.pdf") 
     # Title
     elements.append(Paragraph("Security Logs Report", title_style))
     elements.append(Paragraph(f"Generated on {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}", heading_style))
-    elements.append(Spacer(1, 0.3*inch))
+    elements.append(Spacer(1, 0.15*inch))
     
     # Summary
     if logs:
@@ -63,39 +61,45 @@ def generate_security_logs_pdf(logs: list, filename: str = "security_logs.pdf") 
             event_types[event_type] = event_types.get(event_type, 0) + 1
         
         summary_text = f"<b>Total Events:</b> {len(logs)}<br/>"
-        for event_type, count in event_types.items():
+        for event_type, count in sorted(event_types.items()):
             summary_text += f"<b>{event_type.replace('_', ' ').title()}:</b> {count}<br/>"
         
         elements.append(Paragraph(summary_text, styles['Normal']))
-        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Spacer(1, 0.15*inch))
     
-    # Table
+    # Table - simplified without details column
     if logs:
         table_data = [
             ['Event Type', 'Provider', 'IP Address', 'Request ID', 'Created At']
         ]
         
-        for log in logs[:100]:  # Limit to 100 rows per page
+        for log in logs[:150]:  # Limit to 150 rows
             table_data.append([
                 log.get('event_type', 'N/A').replace('_', ' ').title(),
                 log.get('provider_name', 'N/A'),
                 log.get('ip_address', 'N/A'),
-                log.get('request_id', 'N/A')[:20] if log.get('request_id') else 'N/A',
-                log.get('created_at', 'N/A')[:19] if log.get('created_at') else 'N/A'
+                log.get('request_id', 'N/A')[:12] if log.get('request_id') else 'N/A',
+                log.get('created_at', 'N/A')[:16] if log.get('created_at') else 'N/A'
             ])
         
-        table = Table(table_data, colWidths=[1.2*inch, 1*inch, 1.2*inch, 1.2*inch, 1.3*inch])
+        table = Table(table_data, colWidths=[1.3*inch, 1.1*inch, 1.2*inch, 1.3*inch, 1.3*inch])
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f2937')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTSIZE', (0, 1), (-1, -1), 8),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f3f4f6')])
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('TOPPADDING', (0, 0), (-1, 0), 6),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+            ('FONTSIZE', (0, 1), (-1, -1), 7),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 1), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 3),
         ]))
         
         elements.append(table)
@@ -110,7 +114,7 @@ def generate_security_logs_pdf(logs: list, filename: str = "security_logs.pdf") 
 
 def generate_webhook_events_pdf(events: list, filename: str = "webhook_events.pdf") -> BytesIO:
     """
-    Generate a PDF report of webhook events.
+    Generate a PDF report of webhook events with payloads.
     
     Args:
         events: List of webhook event dictionaries
@@ -120,25 +124,25 @@ def generate_webhook_events_pdf(events: list, filename: str = "webhook_events.pd
         BytesIO object containing the PDF
     """
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=0.4*inch, bottomMargin=0.4*inch)
     
     # Styles
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=24,
+        fontSize=20,
         textColor=colors.HexColor('#1f2937'),
-        spaceAfter=30,
+        spaceAfter=12,
         alignment=TA_CENTER
     )
     
     heading_style = ParagraphStyle(
         'CustomHeading',
         parent=styles['Heading2'],
-        fontSize=12,
+        fontSize=10,
         textColor=colors.HexColor('#374151'),
-        spaceAfter=12
+        spaceAfter=8
     )
     
     # Content
@@ -147,7 +151,7 @@ def generate_webhook_events_pdf(events: list, filename: str = "webhook_events.pd
     # Title
     elements.append(Paragraph("Webhook Events Report", title_style))
     elements.append(Paragraph(f"Generated on {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}", heading_style))
-    elements.append(Spacer(1, 0.3*inch))
+    elements.append(Spacer(1, 0.15*inch))
     
     # Summary
     if events:
@@ -155,44 +159,45 @@ def generate_webhook_events_pdf(events: list, filename: str = "webhook_events.pd
         failed = sum(1 for e in events if e.get('response_status') and e.get('response_status') != 200)
         pending = sum(1 for e in events if not e.get('response_status'))
         
-        summary_text = f"""
-        <b>Total Events:</b> {len(events)}<br/>
-        <b>Successful:</b> {successful}<br/>
-        <b>Failed:</b> {failed}<br/>
-        <b>Pending:</b> {pending}<br/>
-        """
+        summary_text = f"<b>Total Events:</b> {len(events)}<br/><b>Successful:</b> {successful}<br/><b>Failed:</b> {failed}<br/><b>Pending:</b> {pending}"
         
         elements.append(Paragraph(summary_text, styles['Normal']))
-        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Spacer(1, 0.15*inch))
     
-    # Table
+    # Table - simplified without payload column
     if events:
         table_data = [
-            ['Request ID', 'Source', 'Signature', 'Forwarded', 'Status', 'Received At']
+            ['Request ID', 'Source', 'Signature', 'Status', 'Hash', 'Received At']
         ]
         
-        for event in events[:100]:  # Limit to 100 rows per page
+        for event in events[:150]:  # Limit to 150 rows
             table_data.append([
-                event.get('request_id', 'N/A')[:15],
+                event.get('request_id', 'N/A')[:12],
                 event.get('source', 'N/A'),
                 '✓' if event.get('signature_valid') else '✗',
-                '✓' if event.get('forwarded') else '✗',
                 str(event.get('response_status', 'Pending')),
-                event.get('received_at', 'N/A')[:19] if event.get('received_at') else 'N/A'
+                event.get('payload_hash', 'N/A')[:14] if event.get('payload_hash') else 'N/A',
+                event.get('received_at', 'N/A')[:16] if event.get('received_at') else 'N/A'
             ])
         
-        table = Table(table_data, colWidths=[1.2*inch, 1*inch, 0.8*inch, 0.9*inch, 0.8*inch, 1.3*inch])
+        table = Table(table_data, colWidths=[1.2*inch, 1.1*inch, 0.7*inch, 0.9*inch, 1.4*inch, 1.2*inch])
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f2937')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTSIZE', (0, 1), (-1, -1), 8),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f3f4f6')])
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('TOPPADDING', (0, 0), (-1, 0), 6),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+            ('FONTSIZE', (0, 1), (-1, -1), 7),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 1), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 3),
         ]))
         
         elements.append(table)
@@ -235,16 +240,16 @@ def generate_dashboard_pdf(
         BytesIO object containing the PDF
     """
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=0.4*inch, bottomMargin=0.4*inch)
     
     # Styles
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=28,
+        fontSize=22,
         textColor=colors.HexColor('#1f2937'),
-        spaceAfter=30,
+        spaceAfter=12,
         alignment=TA_CENTER,
         fontName='Helvetica-Bold'
     )
@@ -252,17 +257,8 @@ def generate_dashboard_pdf(
     heading_style = ParagraphStyle(
         'CustomHeading',
         parent=styles['Heading2'],
-        fontSize=14,
+        fontSize=12,
         textColor=colors.HexColor('#374151'),
-        spaceAfter=12,
-        fontName='Helvetica-Bold'
-    )
-    
-    subheading_style = ParagraphStyle(
-        'SubHeading',
-        parent=styles['Heading3'],
-        fontSize=11,
-        textColor=colors.HexColor('#4b5563'),
         spaceAfter=8,
         fontName='Helvetica-Bold'
     )
@@ -273,7 +269,7 @@ def generate_dashboard_pdf(
     # Title
     elements.append(Paragraph("WebShield Dashboard Report", title_style))
     elements.append(Paragraph(f"Generated on {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}", heading_style))
-    elements.append(Spacer(1, 0.3*inch))
+    elements.append(Spacer(1, 0.15*inch))
     
     # Executive Summary
     elements.append(Paragraph("Executive Summary", heading_style))
@@ -293,16 +289,19 @@ def generate_dashboard_pdf(
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 11),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f3f4f6')),
-        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#d1d5db')),
-        ('FONTSIZE', (0, 1), (-1, -1), 10),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')])
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f9fafb')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
     ]))
     
     elements.append(summary_table)
-    elements.append(Spacer(1, 0.3*inch))
+    elements.append(Spacer(1, 0.2*inch))
     
     # Traffic Sources
     if traffic_sources:
@@ -310,7 +309,7 @@ def generate_dashboard_pdf(
         traffic_data = [['Source', 'Count', 'Percentage']]
         total_traffic = sum(traffic_sources.values())
         
-        for source, count in sorted(traffic_sources.items(), key=lambda x: x[1], reverse=True):
+        for source, count in sorted(traffic_sources.items(), key=lambda x: x[1], reverse=True)[:10]:
             percentage = (count / total_traffic * 100) if total_traffic > 0 else 0
             traffic_data.append([source, str(count), f'{percentage:.1f}%'])
         
@@ -320,29 +319,32 @@ def generate_dashboard_pdf(
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTSIZE', (0, 1), (-1, -1), 9),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f3f4f6')])
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+            ('LEFTPADDING', (0, 0), (-1, -1), 4),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
         ]))
         
         elements.append(traffic_table)
-        elements.append(Spacer(1, 0.3*inch))
+        elements.append(Spacer(1, 0.2*inch))
     
     # Recent Webhook Events
     if webhook_events:
         elements.append(Paragraph("Recent Webhook Events", heading_style))
         webhook_data = [['Request ID', 'Source', 'Status', 'Received At']]
         
-        for event in webhook_events[:15]:  # Limit to 15 rows
+        for event in webhook_events[:15]:
             status = 'Success' if event.get('response_status') == 200 else 'Failed' if event.get('response_status') else 'Pending'
             webhook_data.append([
-                event.get('request_id', 'N/A')[:15],
+                event.get('request_id', 'N/A')[:12],
                 event.get('source', 'N/A'),
                 status,
-                event.get('received_at', 'N/A')[:19] if event.get('received_at') else 'N/A'
+                event.get('received_at', 'N/A')[:16] if event.get('received_at') else 'N/A'
             ])
         
         webhook_table = Table(webhook_data, colWidths=[1.5*inch, 1.2*inch, 1*inch, 1.3*inch])
@@ -352,15 +354,18 @@ def generate_dashboard_pdf(
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 9),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f3f4f6')])
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+            ('LEFTPADDING', (0, 0), (-1, -1), 4),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
         ]))
         
         elements.append(webhook_table)
-        elements.append(Spacer(1, 0.3*inch))
+        elements.append(Spacer(1, 0.2*inch))
     
     # Page break before security logs
     elements.append(PageBreak())
@@ -370,12 +375,12 @@ def generate_dashboard_pdf(
         elements.append(Paragraph("Security Events Log", heading_style))
         security_data = [['Event Type', 'Provider', 'IP Address', 'Created At']]
         
-        for log in security_logs[:20]:  # Limit to 20 rows
+        for log in security_logs[:25]:
             security_data.append([
                 log.get('event_type', 'N/A').replace('_', ' ').title(),
                 log.get('provider_name', 'N/A'),
                 log.get('ip_address', 'N/A'),
-                log.get('created_at', 'N/A')[:19] if log.get('created_at') else 'N/A'
+                log.get('created_at', 'N/A')[:16] if log.get('created_at') else 'N/A'
             ])
         
         security_table = Table(security_data, colWidths=[1.5*inch, 1.2*inch, 1.3*inch, 1.5*inch])
@@ -385,20 +390,23 @@ def generate_dashboard_pdf(
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 9),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f3f4f6')])
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+            ('LEFTPADDING', (0, 0), (-1, -1), 4),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
         ]))
         
         elements.append(security_table)
     
     # Footer
-    elements.append(Spacer(1, 0.5*inch))
+    elements.append(Spacer(1, 0.3*inch))
     elements.append(Paragraph(
-        "This report was automatically generated by WebShield Gateway. For more information, visit the dashboard.",
-        ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=colors.grey)
+        "This report was automatically generated by WebShield Gateway.",
+        ParagraphStyle('Footer', parent=styles['Normal'], fontSize=7, textColor=colors.grey)
     ))
     
     # Build PDF

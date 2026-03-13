@@ -16,38 +16,7 @@ from app.schemas.webhook_retry import WebhookRetryResponse, DeadLetterQueueRespo
 router = APIRouter()
 
 
-@router.get("/webhooks/{webhook_id}/retries", response_model=List[WebhookRetryResponse])
-async def get_webhook_retries(
-    webhook_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """Get retry history for a webhook. Requires authentication."""
-    stmt = select(WebhookRetry).where(
-        WebhookRetry.webhook_event_id == webhook_id
-    ).order_by(WebhookRetry.attempt_number)
-    
-    result = await db.execute(stmt)
-    retries = result.scalars().all()
-    
-    return [WebhookRetryResponse.from_orm(r) for r in retries]
-
-
-@router.get("/dead-letter-queue", response_model=List[DeadLetterQueueResponse])
-async def get_dead_letter_queue(
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """Get permanently failed webhooks (dead letter queue). Requires authentication."""
-    stmt = select(WebhookRetry).where(
-        WebhookRetry.status == "dead_lettered"
-    ).order_by(
-        WebhookRetry.created_at.desc()
-    ).limit(limit).offset(offset)
-    
-    result = await db.execute(stmt)
+    # ...existing code...
     retries = result.scalars().all()
     
     return [DeadLetterQueueResponse.from_orm(r) for r in retries]

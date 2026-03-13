@@ -2,7 +2,22 @@
  * Export service for downloading reports
  */
 
-import { apiClient } from './api'
+import axios from 'axios'
+import { API_CONFIG } from '@/config/api.config'
+
+/**
+ * Helper function to download file from blob
+ */
+const downloadFile = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.parentNode?.removeChild(link)
+    window.URL.revokeObjectURL(url)
+}
 
 /**
  * Export security logs as PDF
@@ -20,21 +35,20 @@ export const exportSecurityLogsPDF = async (
         if (dateFrom) params.append('date_from', dateFrom)
         if (dateTo) params.append('date_to', dateTo)
 
-        const response = await apiClient.get(
-            `/admin/logs/export/pdf?${params.toString()}`,
-            { responseType: 'blob' }
+        const token = localStorage.getItem('auth_token')
+        const response = await axios.get(
+            `${API_CONFIG.BASE_URL}/admin/logs/export/pdf?${params.toString()}`,
+            {
+                responseType: 'blob',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    ...API_CONFIG.HEADERS
+                }
+            }
         )
 
-        // Create blob and download
         const blob = new Blob([response.data], { type: 'application/pdf' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', `security_logs_${new Date().toISOString().split('T')[0]}.pdf`)
-        document.body.appendChild(link)
-        link.click()
-        link.parentNode?.removeChild(link)
-        window.URL.revokeObjectURL(url)
+        downloadFile(blob, `security_logs_${new Date().toISOString().split('T')[0]}.pdf`)
     } catch (error) {
         console.error('Failed to export security logs as PDF:', error)
         throw error
@@ -57,21 +71,20 @@ export const exportSecurityLogsCSV = async (
         if (dateFrom) params.append('date_from', dateFrom)
         if (dateTo) params.append('date_to', dateTo)
 
-        const response = await apiClient.get(
-            `/admin/logs/export/csv?${params.toString()}`,
-            { responseType: 'blob' }
+        const token = localStorage.getItem('auth_token')
+        const response = await axios.get(
+            `${API_CONFIG.BASE_URL}/admin/logs/export/csv?${params.toString()}`,
+            {
+                responseType: 'blob',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    ...API_CONFIG.HEADERS
+                }
+            }
         )
 
-        // Create blob and download
         const blob = new Blob([response.data], { type: 'text/csv' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', `security_logs_${new Date().toISOString().split('T')[0]}.csv`)
-        document.body.appendChild(link)
-        link.click()
-        link.parentNode?.removeChild(link)
-        window.URL.revokeObjectURL(url)
+        downloadFile(blob, `security_logs_${new Date().toISOString().split('T')[0]}.csv`)
     } catch (error) {
         console.error('Failed to export security logs as CSV:', error)
         throw error
@@ -86,21 +99,20 @@ export const exportWebhookEventsPDF = async (providerName?: string): Promise<voi
         const params = new URLSearchParams()
         if (providerName) params.append('provider_name', providerName)
 
-        const response = await apiClient.get(
-            `/admin/webhooks/export/pdf?${params.toString()}`,
-            { responseType: 'blob' }
+        const token = localStorage.getItem('auth_token')
+        const response = await axios.get(
+            `${API_CONFIG.BASE_URL}/admin/webhooks/export/pdf?${params.toString()}`,
+            {
+                responseType: 'blob',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    ...API_CONFIG.HEADERS
+                }
+            }
         )
 
-        // Create blob and download
         const blob = new Blob([response.data], { type: 'application/pdf' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', `webhook_events_${new Date().toISOString().split('T')[0]}.pdf`)
-        document.body.appendChild(link)
-        link.click()
-        link.parentNode?.removeChild(link)
-        window.URL.revokeObjectURL(url)
+        downloadFile(blob, `webhook_events_${new Date().toISOString().split('T')[0]}.pdf`)
     } catch (error) {
         console.error('Failed to export webhook events as PDF:', error)
         throw error
@@ -112,21 +124,20 @@ export const exportWebhookEventsPDF = async (providerName?: string): Promise<voi
  */
 export const exportDashboardPDF = async (): Promise<void> => {
     try {
-        const response = await apiClient.get(
-            `/admin/dashboard/export/pdf`,
-            { responseType: 'blob' }
+        const token = localStorage.getItem('auth_token')
+        const response = await axios.get(
+            `${API_CONFIG.BASE_URL}/admin/dashboard/export/pdf`,
+            {
+                responseType: 'blob',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    ...API_CONFIG.HEADERS
+                }
+            }
         )
 
-        // Create blob and download
         const blob = new Blob([response.data], { type: 'application/pdf' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', `dashboard_report_${new Date().toISOString().split('T')[0]}.pdf`)
-        document.body.appendChild(link)
-        link.click()
-        link.parentNode?.removeChild(link)
-        window.URL.revokeObjectURL(url)
+        downloadFile(blob, `dashboard_report_${new Date().toISOString().split('T')[0]}.pdf`)
     } catch (error) {
         console.error('Failed to export dashboard as PDF:', error)
         throw error

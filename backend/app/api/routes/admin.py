@@ -389,6 +389,7 @@ async def get_security_log(
 
 
 @router.get("/logs/export/csv")
+@router.get("/logs/export/csv")
 async def export_security_logs_csv(
     event_type: str = Query(None),
     provider_name: str = Query(None),
@@ -398,9 +399,10 @@ async def export_security_logs_csv(
     db: AsyncSession = Depends(get_db)
 ):
     """Export security logs as CSV with pagination."""
-    from fastapi.responses import StreamingResponse
+    from fastapi.responses import Response
     import csv
     import io
+    import json
     
     stmt = select(SecurityLog)
     
@@ -424,21 +426,23 @@ async def export_security_logs_csv(
     # Create CSV
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID", "Provider", "Event Type", "Client IP", "Request ID", "Created At"])
+    writer.writerow(["ID", "Provider", "Event Type", "Client IP", "Request ID", "Details", "Created At"])
     
     for log in logs:
+        details = json.dumps(log.details) if log.details else ""
         writer.writerow([
             str(log.id),
             log.provider_name,
             log.event_type,
             log.ip_address,
             log.request_id or "",
+            details,
             log.created_at.isoformat()
         ])
     
     output.seek(0)
-    return StreamingResponse(
-        iter([output.getvalue()]),
+    return Response(
+        content=output.getvalue(),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=security_logs.csv"}
     )
@@ -455,7 +459,7 @@ async def export_security_logs_pdf(
     db: AsyncSession = Depends(get_db)
 ):
     """Export security logs as PDF."""
-    from fastapi.responses import StreamingResponse
+    from fastapi.responses import Response
     from app.core.pdf_export import generate_security_logs_pdf
     
     stmt = select(SecurityLog)
@@ -485,6 +489,7 @@ async def export_security_logs_pdf(
             'event_type': log.event_type,
             'ip_address': log.ip_address,
             'request_id': log.request_id,
+            'details': log.details,
             'created_at': log.created_at.isoformat()
         }
         for log in logs
@@ -493,8 +498,8 @@ async def export_security_logs_pdf(
     # Generate PDF
     pdf_buffer = generate_security_logs_pdf(logs_data)
     
-    return StreamingResponse(
-        iter([pdf_buffer.getvalue()]),
+    return Response(
+        content=pdf_buffer.getvalue(),
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=security_logs.pdf"}
     )
@@ -507,7 +512,7 @@ async def export_webhooks_pdf(
     db: AsyncSession = Depends(get_db)
 ):
     """Export webhook events as PDF."""
-    from fastapi.responses import StreamingResponse
+    from fastapi.responses import Response
     from app.core.pdf_export import generate_webhook_events_pdf
     
     stmt = select(WebhookEvent)
@@ -540,8 +545,8 @@ async def export_webhooks_pdf(
     # Generate PDF
     pdf_buffer = generate_webhook_events_pdf(webhooks_data)
     
-    return StreamingResponse(
-        iter([pdf_buffer.getvalue()]),
+    return Response(
+        content=pdf_buffer.getvalue(),
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=webhook_events.pdf"}
     )
@@ -551,7 +556,7 @@ async def export_webhooks_pdf(
 @router.get("/dashboard/export/pdf")
 async def export_dashboard_pdf(db: AsyncSession = Depends(get_db)):
     """Export complete dashboard as PDF with all metrics and data."""
-    from fastapi.responses import StreamingResponse
+    from fastapi.responses import Response
     from app.core.pdf_export import generate_dashboard_pdf
     
     # Get providers count
@@ -617,8 +622,60 @@ async def export_dashboard_pdf(db: AsyncSession = Depends(get_db)):
         traffic_sources=traffic_sources
     )
     
-    return StreamingResponse(
-        iter([pdf_buffer.getvalue()]),
+    return Response(
+        content=pdf_buffer.getvalue(),
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=dashboard_report.pdf"}
+    )
+
+
+@router.get("/webhooks/export/csv")
+async def export_webhooks_csv(
+    provider_name: str = Query(None),
+    limit: int = Query(1000, ge=1, le=10000),
+    db: AsyncSession = Depends(get_db)
+):
+    """Export webhook events as CSV with payload and hash."""
+    from fastapi.responses import Response
+    import csv
+    import io
+    import json
+    
+    stmt = select(WebhookEvent)
+    
+    if provider_name:
+        provider_stmt = select(Provider).where(Provider.name == provider_name)
+        provider_result = await db.execute(provider_stmt)
+        provider = provider_result.scalars().first()
+        if provider:
+            stmt = stmt.where(WebhookEvent.provider_id == provider.id)
+    
+    stmt = stmt.order_by(WebhookEvent.received_at.desc()).limit(limit)
+    result = await db.execute(stmt)
+    webhooks = result.scalars().all()
+    
+    # Create CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Request ID", "Source", "Signature Valid", "Forwarded", "Response Status", "Payload Hash", "Payload", "Received At"])
+    
+    for webhook in webhooks:
+        payload_json = json.dumps(webhook.payload) if webhook.payload else ""
+        writer.writerow([
+            str(webhook.id),
+            webhook.request_id,
+            webhook.source,
+            "Yes" if webhook.signature_valid else "No",
+            "Yes" if webhook.forwarded else "No",
+            webhook.response_status or "Pending",
+            webhook.payload_hash or "",
+            payload_json,
+            webhook.received_at.isoformat()
+        ])
+    
+    output.seek(0)
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=webhook_events.csv"}
     )

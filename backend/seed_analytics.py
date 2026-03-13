@@ -125,32 +125,55 @@ async def seed_analytics():
         webhook_analytics = []
         now = datetime.utcnow()
         
+        import random
+        
         for provider in providers[:3]:  # Create analytics for first 3 providers
-            for hours_ago in range(24):  # Last 24 hours
-                hour = now - timedelta(hours=hours_ago)
-                hour = hour.replace(minute=0, second=0, microsecond=0)
-                
-                total = 50 + (hours_ago * 5)
-                successful = int(total * 0.95)
-                failed = total - successful
-                
-                analytics = WebhookAnalytics(
-                    id=uuid.uuid4(),
-                    provider_id=provider.id,
-                    hour=hour,
-                    total_webhooks=total,
-                    successful_webhooks=successful,
-                    failed_webhooks=failed,
-                    pending_webhooks=0,
-                    success_rate=95.0 + (hours_ago % 5),
-                    avg_latency_ms=150.0 + (hours_ago * 10),
-                    p50_latency_ms=100.0 + (hours_ago * 5),
-                    p95_latency_ms=300.0 + (hours_ago * 15),
-                    p99_latency_ms=500.0 + (hours_ago * 20),
-                    created_at=datetime.utcnow()
-                )
-                webhook_analytics.append(analytics)
-                db.add(analytics)
+            for days_ago in range(7):  # Last 7 days
+                for hours_in_day in range(24):  # Each hour of the day
+                    hour = now - timedelta(days=days_ago, hours=hours_in_day)
+                    hour = hour.replace(minute=0, second=0, microsecond=0)
+                    
+                    # Add realistic variation based on time patterns
+                    hour_of_day = hour.hour
+                    
+                    # Peak hours (9-17): more traffic
+                    if 9 <= hour_of_day <= 17:
+                        base_total = 120 + random.randint(-30, 50)
+                        success_rate = 96.0 + random.uniform(-2, 2)
+                    # Evening (18-22): moderate traffic
+                    elif 18 <= hour_of_day <= 22:
+                        base_total = 80 + random.randint(-20, 30)
+                        success_rate = 94.5 + random.uniform(-2, 2)
+                    # Night (23-8): low traffic
+                    else:
+                        base_total = 40 + random.randint(-10, 20)
+                        success_rate = 97.0 + random.uniform(-1, 1)
+                    
+                    total = max(10, base_total)
+                    successful = int(total * (success_rate / 100.0))
+                    failed = total - successful
+                    
+                    # Latency varies with traffic
+                    base_latency = 120 + (total / 5)
+                    avg_latency = base_latency + random.randint(-30, 40)
+                    
+                    analytics = WebhookAnalytics(
+                        id=uuid.uuid4(),
+                        provider_id=provider.id,
+                        hour=hour,
+                        total_webhooks=total,
+                        successful_webhooks=successful,
+                        failed_webhooks=failed,
+                        pending_webhooks=0,
+                        success_rate=success_rate,
+                        avg_latency_ms=avg_latency,
+                        p50_latency_ms=avg_latency * 0.6,
+                        p95_latency_ms=avg_latency * 1.7,
+                        p99_latency_ms=avg_latency * 2.3,
+                        created_at=datetime.utcnow()
+                    )
+                    webhook_analytics.append(analytics)
+                    db.add(analytics)
         
         await db.commit()
         print(f"✓ Created {len(webhook_analytics)} webhook analytics records")
@@ -159,22 +182,34 @@ async def seed_analytics():
         print("🔒 Seeding security analytics...")
         security_analytics = []
         
-        for hours_ago in range(24):  # Last 24 hours
-            hour = now - timedelta(hours=hours_ago)
-            hour = hour.replace(minute=0, second=0, microsecond=0)
-            
-            analytics = SecurityAnalytics(
-                id=uuid.uuid4(),
-                hour=hour,
-                invalid_signatures=2 + (hours_ago % 3),
-                replay_attempts=1 + (hours_ago % 2),
-                rate_limit_violations=0 + (hours_ago % 2),
-                timestamp_errors=0,
-                total_security_events=3 + (hours_ago % 5),
-                created_at=datetime.utcnow()
-            )
-            security_analytics.append(analytics)
-            db.add(analytics)
+        for days_ago in range(7):  # Last 7 days
+            for hours_in_day in range(24):  # Each hour of the day
+                hour = now - timedelta(days=days_ago, hours=hours_in_day)
+                hour = hour.replace(minute=0, second=0, microsecond=0)
+                
+                # More security events during business hours
+                hour_of_day = hour.hour
+                if 9 <= hour_of_day <= 17:
+                    base_events = 5 + (hours_in_day % 4)
+                else:
+                    base_events = 1 + (hours_in_day % 2)
+                
+                invalid_sigs = base_events + random.randint(-1, 2)
+                replay_attempts = max(0, base_events // 2 + random.randint(-1, 1))
+                rate_violations = max(0, base_events // 3 + random.randint(0, 1))
+                
+                analytics = SecurityAnalytics(
+                    id=uuid.uuid4(),
+                    hour=hour,
+                    invalid_signatures=max(0, invalid_sigs),
+                    replay_attempts=max(0, replay_attempts),
+                    rate_limit_violations=max(0, rate_violations),
+                    timestamp_errors=0,
+                    total_security_events=max(0, invalid_sigs + replay_attempts + rate_violations),
+                    created_at=datetime.utcnow()
+                )
+                security_analytics.append(analytics)
+                db.add(analytics)
         
         await db.commit()
         print(f"✓ Created {len(security_analytics)} security analytics records")
