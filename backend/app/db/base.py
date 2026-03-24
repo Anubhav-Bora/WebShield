@@ -25,5 +25,6 @@ def _import_models():
     from app.db.models import audit_log  # noqa: F401
     from app.db.models import webhook_retry  # noqa: F401
     from app.db.models import analytics  # noqa: F401
+    from app.db.models import simulation  # noqa: F401
 
 _import_models()

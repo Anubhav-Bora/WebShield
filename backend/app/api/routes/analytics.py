@@ -99,6 +99,7 @@ async def get_webhook_analytics(
             'p50_latency_ms': 0.0,
             'p95_latency_ms': 0.0,
             'p99_latency_ms': 0.0,
+            'latency_sum': 0.0,
             'count': 0
         })
         
@@ -109,22 +110,26 @@ async def get_webhook_analytics(
             aggregated[hour_key]['successful_webhooks'] += a.successful_webhooks
             aggregated[hour_key]['failed_webhooks'] += a.failed_webhooks
             aggregated[hour_key]['pending_webhooks'] += a.pending_webhooks
-            aggregated[hour_key]['avg_latency_ms'] += a.avg_latency_ms
-            aggregated[hour_key]['p50_latency_ms'] += a.p50_latency_ms
-            aggregated[hour_key]['p95_latency_ms'] += a.p95_latency_ms
-            aggregated[hour_key]['p99_latency_ms'] += a.p99_latency_ms
+            # Use weighted average for latencies
+            aggregated[hour_key]['latency_sum'] += a.avg_latency_ms * a.total_webhooks
             aggregated[hour_key]['count'] += 1
         
-        # Average the aggregated values and sort by hour
+        # Calculate weighted averages and sort by hour
         result_list = []
         for hour_key in sorted(aggregated.keys()):
             data = aggregated[hour_key]
             if data['count'] > 0:
-                data['success_rate'] = (data['successful_webhooks'] / data['total_webhooks'] * 100) if data['total_webhooks'] > 0 else 0
-                data['avg_latency_ms'] /= data['count']
-                data['p50_latency_ms'] /= data['count']
-                data['p95_latency_ms'] /= data['count']
-                data['p99_latency_ms'] /= data['count']
+                total = data['total_webhooks']
+                data['success_rate'] = (data['successful_webhooks'] / total * 100) if total > 0 else 0
+                # Weighted average latency
+                data['avg_latency_ms'] = data['latency_sum'] / total if total > 0 else 0
+                # Simple average for percentiles (acceptable approximation)
+                data['p50_latency_ms'] = sum(a.p50_latency_ms for a in analytics if a.hour.isoformat() == hour_key) / data['count']
+                data['p95_latency_ms'] = sum(a.p95_latency_ms for a in analytics if a.hour.isoformat() == hour_key) / data['count']
+                data['p99_latency_ms'] = sum(a.p99_latency_ms for a in analytics if a.hour.isoformat() == hour_key) / data['count']
+                # Remove temporary fields
+                del data['latency_sum']
+                del data['count']
                 result_list.append(data)
         
         logger.info(f"Returning {len(result_list)} aggregated points")

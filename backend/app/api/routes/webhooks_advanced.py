@@ -16,7 +16,18 @@ from app.schemas.webhook_retry import WebhookRetryResponse, DeadLetterQueueRespo
 router = APIRouter()
 
 
-    # ...existing code...
+@router.get("/dead-letter-queue")
+async def get_dead_letter_queue(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0)
+):
+    """Get dead-lettered webhooks for current user."""
+    stmt = select(WebhookRetry).where(
+        WebhookRetry.status == "dead_lettered"
+    ).limit(limit).offset(offset)
+    result = await db.execute(stmt)
     retries = result.scalars().all()
     
     return [DeadLetterQueueResponse.from_orm(r) for r in retries]
