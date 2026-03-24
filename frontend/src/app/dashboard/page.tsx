@@ -72,7 +72,7 @@ export default function DashboardPage() {
     }, [webhookEvents])
 
     // Fetch analytics data for the chart
-    const { data: analyticsData = [], isLoading: analyticsLoading, error: analyticsError } = useQuery({
+    const { data: analyticsData = [] } = useQuery({
         queryKey: ['webhookAnalytics', token],
         queryFn: async () => {
             console.log('Fetching analytics with token:', token?.substring(0, 20) + '...')

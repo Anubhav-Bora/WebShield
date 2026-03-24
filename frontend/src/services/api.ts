@@ -21,10 +21,12 @@ apiClient.interceptors.request.use(
             console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`)
         }
 
-        // Add auth token if available
-        const token = localStorage.getItem('auth_token')
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`
+        // Add auth token if available (client-side only)
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('auth_token')
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`
+            }
         }
 
         return config
@@ -54,7 +56,13 @@ apiClient.interceptors.response.use(
             // Handle 401 Unauthorized - redirect to login
             if (status === 401) {
                 localStorage.removeItem('auth_token')
-                window.location.href = '/login'
+                // Don't log 401 errors as they're expected when not authenticated
+                const apiError: ApiError = {
+                    status,
+                    detail: data?.detail || 'Unauthorized - please log in',
+                    timestamp: new Date().toISOString(),
+                }
+                return Promise.reject(apiError)
             }
 
             // Handle 403 Forbidden
@@ -64,10 +72,10 @@ apiClient.interceptors.response.use(
 
             const apiError: ApiError = {
                 status,
-                detail: data?.detail || error.message || 'Server error',
+                detail: data?.detail || data?.message || error.message || 'Server error',
                 timestamp: new Date().toISOString(),
             }
-            console.error('[API] Response error:', apiError)
+            console.error(`[API] Response error: [${status}] ${apiError.detail}`)
             return Promise.reject(apiError)
         } else if (error.request) {
             // Request made but no response (network error or timeout)
@@ -78,7 +86,7 @@ apiClient.interceptors.response.use(
                     : 'Network error - unable to reach server',
                 timestamp: new Date().toISOString(),
             }
-            console.error('[API] No response:', apiError)
+            console.error('[API] No response:', apiError.detail)
             return Promise.reject(apiError)
         } else {
             // Error in request setup
@@ -87,7 +95,7 @@ apiClient.interceptors.response.use(
                 detail: error.message || 'Unknown error',
                 timestamp: new Date().toISOString(),
             }
-            console.error('[API] Request setup error:', apiError)
+            console.error('[API] Request setup error:', apiError.detail)
             return Promise.reject(apiError)
         }
     }

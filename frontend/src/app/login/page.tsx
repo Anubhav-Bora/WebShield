@@ -32,7 +32,11 @@ export default function LoginPage() {
 
             setAuth(currentUser, authResponse.access_token)
             success('Welcome back!', `Logged in as ${currentUser.username}`)
-            router.push('/dashboard')
+
+            // Wait a moment for cookie to be set, then redirect
+            setTimeout(() => {
+                router.push('/dashboard')
+            }, 100)
         } catch (err: any) {
             error('Login failed', err.detail || 'Invalid credentials')
         } finally {
@@ -99,7 +103,9 @@ export default function LoginPage() {
                     </form>
 
                     <div className="mt-6 text-center text-sm text-slate-400">
-                        Demo: username: <span className="text-indigo-400 font-mono">demo</span> / password: <span className="text-indigo-400 font-mono">Demo@12345</span>
+                        Demo: username: <span className="text-indigo-400 font-mono">demo</span> / password: <span className="text-indigo-400 font-mono">demo123
+
+                        </span>
                     </div>
                 </div>
             </div>
