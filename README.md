@@ -440,32 +440,6 @@ cd backend
 python seed_analytics.py
 ```
 
----
-
-#### 4️⃣ Test Scripts (Diagnostic)
-
-##### Test Specific Credentials
-```bash
-python test_specific_credentials.py
-```
-
-##### Test All Logins
-```bash
-python test_all_logins.py
-```
-
-##### Test Password Hashing
-```bash
-python test_password.py
-```
-
-##### Diagnose Login Issues
-```bash
-python diagnose_login.py "username" "password"
-```
-
----
-
 ### Frontend Commands
 
 ```bash
