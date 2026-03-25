@@ -885,7 +885,6 @@ RATE_LIMIT_PER_MINUTE=20
 - [Next.js Documentation](https://nextjs.org/docs)
 - [WebSocket Guide](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
 - [OWASP Security Guide](https://owasp.org/www-project-web-security-testing-guide/)
-- [Webhook Best Practices](https://www.svix.com/resources/guides/webhook-security/)
 
 ---
 **Last Updated**: March 25, 2026  
