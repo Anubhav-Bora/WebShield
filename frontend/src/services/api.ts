@@ -19,6 +19,13 @@ apiClient.interceptors.request.use(
         // Log request (development only)
         if (process.env.NODE_ENV === 'development') {
             console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`)
+            console.log(`[API] BaseURL: ${config.baseURL}`)
+            console.log(`[API] Full URL: ${config.baseURL}${config.url}`)
+            
+            // Log request body for login requests
+            if (config.url?.includes('/login') && config.data) {
+                console.log(`[API] Request payload:`, config.data)
+            }
         }
 
         // Add auth token if available (client-side only)

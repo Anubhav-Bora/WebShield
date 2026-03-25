@@ -22,13 +22,23 @@ export default function LoginPage() {
         setIsLoading(true)
 
         try {
-            const authResponse = await login(formData)
+            // Trim whitespace from credentials
+            const trimmedFormData = {
+                username: formData.username.trim(),
+                password: formData.password.trim()
+            }
+            console.log('Attempting login with username:', trimmedFormData.username)
+            const authResponse = await login(trimmedFormData)
+            console.log('Login response received:', authResponse)
 
             // Store token in localStorage first
             localStorage.setItem('auth_token', authResponse.access_token)
+            console.log('Token stored in localStorage')
 
             // Verify JWT token by calling /auth/me endpoint
+            console.log('Fetching current user info...')
             const currentUser = await getCurrentUser()
+            console.log('Current user fetched:', currentUser)
 
             setAuth(currentUser, authResponse.access_token)
             success('Welcome back!', `Logged in as ${currentUser.username}`)
@@ -38,7 +48,10 @@ export default function LoginPage() {
                 router.push('/dashboard')
             }, 100)
         } catch (err: any) {
-            error('Login failed', err.detail || 'Invalid credentials')
+            console.error('Login error:', err)
+            console.error('Error detail:', err.detail)
+            console.error('Full error object:', err)
+            error('Login failed', err.detail || err.message || 'Invalid credentials')
         } finally {
             setIsLoading(false)
         }

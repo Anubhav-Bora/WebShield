@@ -5,6 +5,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useNotificationStore } from '@/store/useNotificationStore'
 import { useQueryClient } from '@tanstack/react-query'
+import { API_CONFIG } from '@/config/api.config'
 
 export interface WebSocketEvent {
     type: 'webhook_event' | 'stats_update' | 'security_event' | 'alert' | 'connection' | 'echo'
@@ -36,13 +37,17 @@ export const useWebSocket = (onEvent?: (event: WebSocketEvent) => void) => {
             // Get auth token from localStorage
             const token = localStorage.getItem('auth_token')
             if (!token) {
+                console.warn('WebSocket: No auth token found in localStorage')
                 showError('WebSocket Error', 'Authentication token not found')
                 return
             }
 
+            console.log('WebSocket: Token found, attempting connection')
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-            const host = window.location.host
-            const wsUrl = `${protocol}//${host}/ws?token=${encodeURIComponent(token)}`
+            const baseUrl = API_CONFIG.BASE_URL.replace(/^https?:\/\//, '')
+            const wsUrl = `${protocol}//${baseUrl}/ws?token=${encodeURIComponent(token)}`
+            
+            console.log('WebSocket: Connecting to', wsUrl.replace(token, '[TOKEN]'))
 
             wsRef.current = new WebSocket(wsUrl)
 
@@ -106,10 +111,14 @@ export const useWebSocket = (onEvent?: (event: WebSocketEvent) => void) => {
                 }
             }
 
-            wsRef.current.onerror = () => {
+            wsRef.current.onerror = (event) => {
                 clearTimeout(connectionTimeout)
                 setIsConnected(false)
-                console.error('WebSocket error')
+                // Only log on first error, not every retry
+                if (reconnectAttemptsRef.current <= 1) {
+                    console.warn('WebSocket initial connection error - will retry')
+                    console.debug('Error details:', event)
+                }
             }
 
             wsRef.current.onclose = () => {

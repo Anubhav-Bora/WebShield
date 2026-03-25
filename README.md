@@ -1,438 +1,215 @@
-# WebShield - Production-Grade Webhook Security Gateway
+# 🛡️ WebShield - Advanced Webhook Security & Attack Simulation Platform
 
-A comprehensive webhook security gateway that validates, monitors, and forwards webhooks from external providers with enterprise-grade security features. WebShield protects your infrastructure from malicious webhooks through signature verification, replay protection, rate limiting, and comprehensive security monitoring.
+A comprehensive, production-ready webhook security platform with real-time event streaming, advanced security features, and attack simulation capabilities for testing webhook resilience.
 
-## 🎯 What is WebShield?
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Python](https://img.shields.io/badge/Python-3.11+-blue)
+![Node.js](https://img.shields.io/badge/Node.js-18+-green)
+![Status](https://img.shields.io/badge/status-Active-brightgreen)
 
-WebShield is a full-stack webhook security solution designed to:
-- **Validate** incoming webhooks with HMAC-SHA256 signatures
-- **Protect** against replay attacks, rate limiting, and timestamp manipulation
-- **Monitor** all security events with real-time logging and analytics
-- **Report** on webhook traffic, success rates, and security incidents
-- **Scale** to handle high-volume webhook traffic with Redis caching
+---
+
+## 📋 Table of Contents
+
+- [Overview](#overview)
+- [✨ Key Features](#key-features)
+- [🏗️ Tech Stack](#tech-stack)
+- [🚀 Quick Start](#quick-start)
+- [⚙️ Configuration](#configuration)
+- [📖 Usage Guide](#usage-guide)
+- [🔧 Scripts & Commands](#scripts--commands)
+- [🏛️ Project Structure](#project-structure)
+- [🔐 Security Features](#security-features)
+- [📊 Dashboard Features](#dashboard-features)
+- [🎯 Attack Simulator](#attack-simulator)
+- [📡 API Endpoints](#api-endpoints)
+- [🐛 Troubleshooting](#troubleshooting)
+
+---
+
+## 📝 Overview
+
+**WebShield** is a sophisticated webhook management and security testing platform designed to help development teams:
+
+- 🎯 **Manage webhooks** across multiple providers with granular permission control
+- 🔍 **Monitor events** in real-time with WebSocket streaming
+- 🚨 **Detect security threats** through advanced payload analysis and rate limiting
+- 🧪 **Simulate attacks** to test webhook endpoints under various security scenarios
+- 📊 **Analyze patterns** with comprehensive analytics and audit logging
+- 🔐 **Enforce security** through JWT authentication, CSRF protection, and payload integrity verification
+
+Perfect for testing webhook resilience, understanding attack patterns, and building secure webhook ecosystems.
+
+---
 
 ## ✨ Key Features
 
-### 🔐 Advanced Security
-- **HMAC-SHA256 Signature Verification** - Constant-time comparison prevents timing attacks
-- **Replay Attack Prevention** - Redis-based request deduplication with 5-minute TTL
-- **Timestamp Validation** - Rejects webhooks older than 5 minutes or with future timestamps
-- **Rate Limiting** - Token bucket algorithm (100 requests/60 seconds per provider)
-- **Payload Integrity Checking** - SHA256 hashing detects tampering in transit
-- **Login Security** - Brute-force protection with account lockout
-- **CSRF Protection** - Prevents cross-site request forgery attacks
-- **Security Headers** - Comprehensive HTTP security headers
+### 🔐 Security
+- **JWT Authentication** with secure token-based access control
+- **CSRF Protection** on all state-changing operations
+- **Payload Integrity Verification** using HMAC signatures
+- **Rate Limiting** with Redis-backed sliding window algorithm
+- **Security Headers** enforcement (HSTS, X-Frame-Options, CSP, etc.)
+- **Password Hashing** using Argon2 via passlib
+- **SQL Injection Prevention** through parameterized queries
 
-### 📊 Real-Time Monitoring & Analytics
-- **Live Dashboard** - Real-time webhook traffic visualization with 7-day history
-- **Security Event Logging** - Detailed logs of all security violations (invalid signatures, replays, rate limits, etc.)
-- **Webhook Analytics** - Success rates, failure rates, latency percentiles (p50, p95, p99)
-- **Security Analytics** - Aggregated security event metrics by hour
-- **Alert System** - Configurable alerts for security thresholds
-- **Audit Trail** - Complete compliance audit log of all actions
-- **PDF/CSV Export** - Generate reports for compliance and analysis
+### 📡 Real-time Features
+- **WebSocket Streaming** for instant event notifications
+- **Live Updates** on webhook events, security alerts, and statistics
+- **Connection Management** with automatic reconnection and exponential backoff
+- **Multi-user Support** with per-user connection tracking
 
-### 🎯 Professional User Interface
-- **Next.js 16** with App Router and React Query
-- **Tailwind CSS** with glassmorphism design and dark theme
-- **Real-time Updates** with WebSocket support
-- **Responsive Design** - Works on desktop, tablet, and mobile
-- **GSAP Animations** - Smooth, professional animations
-- **Type-Safe** - Full TypeScript implementation
+### 📊 Monitoring & Analytics
+- **Real-time Dashboard** with animated charts and stats
+- **Webhook Event Tracking** with payload inspection
+- **Security Logs** with detailed threat information
+- **Analytics** on event patterns, success rates, and response times
+- **Audit Logging** for compliance and debugging
+- **Provider Analytics** showing per-provider statistics
 
-## Tech Stack
+### 🎯 Webhook Management
+- **Multi-provider Support** (HTTP, HTTPS, custom protocols)
+- **Provider Isolation** - each user sees only their providers
+- **Event Routing** based on provider configuration
+- **Retry Logic** with exponential backoff for failed events
+- **Timeout Handling** for slow webhook endpoints
+- **Payload Formatting** with custom headers and authentication
 
-### Backend
-- **FastAPI** - Modern async Python web framework with automatic API documentation
-- **PostgreSQL 14+** - Reliable relational database for persistent storage
-- **Redis 7+** - In-memory data store for caching, rate limiting, and replay protection
-- **SQLAlchemy 2.0** - Async ORM for database operations
-- **Alembic** - Database migration tool for schema versioning
-- **Pydantic** - Data validation and serialization
-- **Python-Jose** - JWT token generation and validation
-- **Passlib** - Password hashing with bcrypt
-- **httpx** - Async HTTP client for webhook forwarding
-- **python-multipart** - Multipart form data handling
-- **reportlab** - PDF generation for reports
-- **python-dotenv** - Environment variable management
+### 🧪 Attack Simulation
+- **8 Attack Scenarios**:
+  1. ✅ Normal Event (baseline)
+  2. 🔴 Missing Signature Attack
+  3. ⚠️ Invalid Signature Attack
+  4. 💥 Large Payload Attack
+  5. 📢 Verbose Event Attack
+  6. 🔁 Duplicate Event Attack
+  7. 🕐 Delayed Event Attack
+  8. 🧬 Malformed JSON Attack
 
-### Frontend
-- **Next.js 16** - React framework with App Router and server components
-- **React 18** - UI library with hooks
-- **React Query (TanStack Query)** - Server state management and caching
-- **Zustand** - Lightweight client state management
-- **TypeScript 5** - Type-safe JavaScript
-- **Tailwind CSS 3** - Utility-first CSS framework
-- **GSAP 3** - Professional animation library
-- **Lucide React** - Beautiful, consistent icon library
-- **Axios** - HTTP client for API requests
-- **date-fns** - Date manipulation and formatting
-- **clsx** - Conditional CSS class names
+- **Automatic User Creation** with verified credentials
+- **Provider Simulation** with realistic test data
+- **Detailed Reporting** on attack results
 
-### Infrastructure & DevOps
-- **Docker** - Containerization for consistent environments
-- **Docker Compose** - Multi-container orchestration
-- **PostgreSQL** - Production-grade relational database
-- **Redis** - High-performance caching and data structures
-- **Nginx** - Reverse proxy (optional for production)
+### 📈 Analytics & Insights
+- **Time-series Analytics** for event trends
+- **Provider Performance** metrics
+- **Success/Failure Rates** with detailed breakdowns
+- **Response Time Analysis**
+- **Attack Pattern Detection**
 
-### Development Tools
-- **pytest** - Python testing framework
-- **mypy** - Static type checker for Python
-- **flake8** - Python linter
-- **ESLint** - JavaScript/TypeScript linter
-- **Prettier** - Code formatter
-- **Git** - Version control
+---
 
-### Key Libraries & Packages
+## 🏗️ Tech Stack
 
-#### Backend (Python)
-```
-fastapi==0.104.1
-sqlalchemy==2.0.23
-asyncpg==0.29.0
-redis==5.0.1
-pydantic==2.5.0
-python-jose==3.3.0
-passlib==1.7.4
-python-multipart==0.0.6
-reportlab==4.0.7
-httpx==0.25.2
-python-dotenv==1.0.0
-alembic==1.13.0
-```
+### 🖥️ Backend
+| Technology | Purpose | Version |
+|------------|---------|---------|
+| ![FastAPI](https://img.shields.io/badge/FastAPI-009688) | Web Framework | 0.104+ |
+| ![Python](https://img.shields.io/badge/Python-3776AB) | Language | 3.11+ |
+| ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-FF7D00) | ORM | 2.0+ |
+| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791) | Database | 14+ |
+| ![Redis](https://img.shields.io/badge/Redis-DC382D) | Caching/Rate Limiting | 7.0+ |
+| ![Uvicorn](https://img.shields.io/badge/Uvicorn-000000) | ASGI Server | 0.24+ |
+| ![Pydantic](https://img.shields.io/badge/Pydantic-E92063) | Data Validation | 2.0+ |
+| ![httpx](https://img.shields.io/badge/httpx-009688) | Async HTTP | 0.24+ |
+| ![Alembic](https://img.shields.io/badge/Alembic-FF7D00) | Migrations | 1.12+ |
 
-#### Frontend (Node.js)
-```
-next@16.0.0
-react@18.2.0
-react-dom@18.2.0
-@tanstack/react-query@5.28.0
-zustand@4.4.1
-typescript@5.3.3
-tailwindcss@3.3.6
-gsap@3.12.2
-lucide-react@0.294.0
-axios@1.6.2
-date-fns@2.30.0
-```
+### 🎨 Frontend
+| Technology | Purpose | Version |
+|------------|---------|---------|
+| ![Next.js](https://img.shields.io/badge/Next.js-000000) | Framework | 16.1+ |
+| ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6) | Language | 5.0+ |
+| ![Tailwind CSS](https://img.shields.io/badge/Tailwind-38B2AC) | Styling | 3.3+ |
+| ![React Query](https://img.shields.io/badge/React%20Query-FF4154) | State Mgmt | 4.35+ |
+| ![Zustand](https://img.shields.io/badge/Zustand-15AAD7) | Store | 4.4+ |
+| ![Axios](https://img.shields.io/badge/Axios-5A29E4) | HTTP Client | 1.6+ |
+| ![Shadcn/ui](https://img.shields.io/badge/Shadcn%2Fui-000000) | UI Components | Latest |
+| ![GSAP](https://img.shields.io/badge/GSAP-88CE02) | Animations | 3.12+ |
 
-## Getting Started
+### 🐳 DevOps & Tools
+| Tool | Purpose |
+|------|---------|
+| ![Docker](https://img.shields.io/badge/Docker-2496ED) | Containerization |
+| ![Docker Compose](https://img.shields.io/badge/Docker%20Compose-2496ED) | Orchestration |
+| ![Git](https://img.shields.io/badge/Git-F05032) | Version Control |
+| ![Postman](https://img.shields.io/badge/Postman-FF6C37) | API Testing |
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL 14+
-- Redis 7+
-- Docker & Docker Compose (recommended)
+- ![Python](https://img.shields.io/badge/Python-3.11+-blue) Python 3.11 or higher
+- ![Node.js](https://img.shields.io/badge/Node.js-18+-green) Node.js 18 or higher
+- ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue) PostgreSQL 14 or higher
+- ![Redis](https://img.shields.io/badge/Redis-7.0+-red) Redis 7.0 or higher
+- ![Docker](https://img.shields.io/badge/Docker-required-blue) Docker & Docker Compose (optional but recommended)
 
-### Quick Start with Docker
+### Installation
 
+#### 1️⃣ Clone Repository
 ```bash
-# Start all services (PostgreSQL, Redis, Backend, Frontend)
-docker-compose up -d
-
-# Backend will be available at http://localhost:8000
-# Frontend will be available at http://localhost:3000
-# API Docs at http://localhost:8000/docs
+git clone https://github.com/your-org/webshield.git
+cd webshield
 ```
 
-### Manual Setup
-
-#### Backend Setup
+#### 2️⃣ Backend Setup
 ```bash
 cd backend
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Activate virtual environment
+# On Windows:
+.\venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Start PostgreSQL and Redis (using Docker)
-docker-compose up -d postgres redis
+# Setup environment variables
+cp .env.example .env
+# Edit .env with your configuration
+```
 
+#### 3️⃣ Database Setup
+```bash
 # Run migrations
 alembic upgrade head
 
-# Create demo user
+# Create demo user (optional)
 python create_demo_user.py
-
-# Seed sample data
-python seed_data.py
-python seed_analytics.py
-
-# Start server
-python -m uvicorn app.main:app --reload
 ```
 
-#### Frontend Setup
+#### 4️⃣ Frontend Setup
 ```bash
-cd frontend
+cd ../frontend
 
 # Install dependencies
 npm install
+# or
+yarn install
 
 # Start development server
 npm run dev
 ```
 
-### Access the Application
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-
-### Demo Credentials
-
-Use these credentials to log in and explore the system:
-
-```
-Username: demo
-Password: demo123
-```
-
-The demo account has access to:
-- Dashboard with real-time analytics
-- 6 pre-configured webhook providers (Stripe, GitHub, PayPal, Twilio, SendGrid, Shopify)
-- 7 days of sample webhook traffic data
-- Security event logs showing blocked attacks
-- Full reporting and export capabilities
-
-## Testing & Verification
-
-WebShield includes comprehensive test suites to verify all functionality and security features:
-
-### Functionality Tests
-Run the complete functionality test suite:
+#### 5️⃣ Start Services
 ```bash
+# Terminal 1: Backend
 cd backend
-python test_all_functionality.py
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Terminal 2: Frontend
+cd frontend
+npm run dev
 ```
 
-**Tests 17 core features:**
-- ✅ Authentication (login/JWT tokens)
-- ✅ Provider management
-- ✅ Webhook signature validation
-- ✅ Replay attack protection
-- ✅ Rate limiting enforcement
-- ✅ Timestamp validation
-- ✅ Security event logging
-- ✅ Webhook event storage
-- ✅ Analytics aggregation
-- ✅ Security analytics
-- ✅ Payload integrity checking
-- ✅ Missing header validation
-- ✅ And more...
-
-**Result: 17/17 tests passing (100% success rate)**
-
-### Adversarial Security Tests
-Run the adversarial test suite to prove security is real:
+### Using Docker Compose (Recommended)
 ```bash
-cd backend
-python test_adversarial_security.py
-```
-
-**Tests 10 attack scenarios:**
-- ✅ Signature tampering detection
-- ✅ Timing attack resistance (constant-time comparison)
-- ✅ Rate limit enforcement
-- ✅ Replay attack protection
-- ✅ Wrong secret key rejection
-- ✅ Payload integrity verification
-- ✅ Timestamp validation (old timestamps)
-- ✅ Future timestamp rejection
-- ✅ Missing required headers
-- ✅ Invalid JSON rejection
-
-**Result: 10/10 tests passing (100% success rate)**
-
-These adversarial tests are designed to FAIL if security is fake. The fact that they all pass proves the security logic is real, not designed to pass.
-
-## Project Structure
-
-```
-webshield/
-├── backend/
-│   ├── app/
-│   │   ├── api/routes/
-│   │   │   ├── webhook.py              # Webhook ingestion & validation
-│   │   │   ├── admin.py                # Admin endpoints (providers, webhooks, logs)
-│   │   │   ├── auth.py                 # Authentication (login, register)
-│   │   │   ├── analytics.py            # Analytics endpoints
-│   │   │   ├── webhooks_advanced.py    # Advanced webhook features
-│   │   │   └── websocket.py            # WebSocket for real-time updates
-│   │   ├── core/
-│   │   │   ├── security.py             # HMAC-SHA256 verification
-│   │   │   ├── rate_limit.py           # Token bucket rate limiting
-│   │   │   ├── payload_integrity.py    # SHA256 payload hashing
-│   │   │   ├── security_logger.py      # Security event logging
-│   │   │   ├── forwarding.py           # Webhook forwarding to internal services
-│   │   │   ├── auth.py                 # JWT token management
-│   │   │   ├── analytics_calculator.py # Real-time analytics calculation
-│   │   │   ├── pdf_export.py           # PDF report generation
-│   │   │   ├── error_handler.py        # Global error handling
-│   │   │   └── config.py               # Configuration management
-│   │   ├── db/
-│   │   │   ├── models/
-│   │   │   │   ├── provider.py         # Webhook provider model
-│   │   │   │   ├── webhook_event.py    # Webhook event model
-│   │   │   │   ├── security_log.py     # Security event log model
-│   │   │   │   ├── analytics.py        # Analytics models
-│   │   │   │   ├── user.py             # User model
-│   │   │   │   ├── audit_log.py        # Audit log model
-│   │   │   │   └── alert_rule.py       # Alert rule model
-│   │   │   ├── session.py              # Database session management
-│   │   │   └── base.py                 # SQLAlchemy base
-│   │   ├── schemas/                    # Pydantic request/response schemas
-│   │   └── main.py                     # FastAPI application entry point
-│   ├── alembic/                        # Database migrations
-│   ├── test_all_functionality.py       # Comprehensive functionality tests (17 tests)
-│   ├── test_adversarial_security.py    # Adversarial security tests (10 tests)
-│   ├── seed_data.py                    # Sample data seeding
-│   ├── seed_analytics.py               # Analytics data seeding
-│   ├── create_demo_user.py             # Demo user creation
-│   ├── requirements.txt                # Python dependencies
-│   └── .env.example                    # Environment variables template
-│
-├── frontend/
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── dashboard/              # Main dashboard page
-│   │   │   ├── security-logs/          # Security events page
-│   │   │   ├── webhooks/               # Webhook management pages
-│   │   │   ├── providers/              # Provider management pages
-│   │   │   ├── admin/                  # Admin analytics pages
-│   │   │   ├── login/                  # Login page
-│   │   │   ├── signup/                 # Registration page
-│   │   │   ├── layout.tsx              # Root layout
-│   │   │   └── page.tsx                # Home page
-│   │   ├── components/
-│   │   │   ├── layout/                 # Layout components (Header, Sidebar)
-│   │   │   └── ui/                     # Reusable UI components
-│   │   ├── services/                   # API client services
-│   │   ├── hooks/                      # Custom React hooks
-│   │   ├── store/                      # Zustand state management
-│   │   ├── types/                      # TypeScript type definitions
-│   │   ├── utils/                      # Utility functions
-│   │   ├── styles/                     # Global CSS styles
-│   │   └── middleware.ts               # Next.js middleware
-│   ├── package.json                    # Node.js dependencies
-│   ├── next.config.js                  # Next.js configuration
-│   ├── tsconfig.json                   # TypeScript configuration
-│   └── tailwind.config.js              # Tailwind CSS configuration
-│
-├── docker-compose.yml                  # Docker Compose configuration
-├── README.md                           # This file
-└── .gitignore                          # Git ignore rules
-```
-
-## Key Implementation Details
-
-### Security Architecture
-
-**HMAC Signature Verification**
-- Uses HMAC-SHA256 with constant-time comparison (`hmac.compare_digest`)
-- Prevents timing attacks where attackers measure response time
-- Signature calculated over raw request body
-
-**Replay Attack Prevention**
-- Redis-based request deduplication
-- Each request ID stored with 5-minute TTL
-- Duplicate requests rejected with 409 Conflict status
-
-**Rate Limiting**
-- Token bucket algorithm implemented with Redis Lua scripts
-- 100 requests per 60 seconds per provider
-- Atomic operations prevent race conditions
-
-**Payload Integrity**
-- SHA256 hashing of webhook payload
-- Hash stored with webhook event
-- Tampering detected on verification
-
-**Timestamp Validation**
-- Rejects webhooks older than 5 minutes
-- Rejects webhooks with future timestamps
-- Prevents replay and clock-skew attacks
-
-### Database Schema
-
-**Providers Table**
-- Stores webhook provider configurations
-- Secret key for HMAC signing
-- Forwarding URL for internal services
-
-**WebhookEvents Table**
-- Stores all incoming webhooks
-- Payload, signature validity, hash
-- Request ID for replay detection
-
-**SecurityLogs Table**
-- Logs all security events
-- Event type, IP address, details
-- Used for compliance and forensics
-
-**Analytics Tables**
-- WebhookAnalytics: Hourly aggregated metrics
-- SecurityAnalytics: Hourly security event counts
-- Used for dashboard and reporting
-
-### API Endpoints
-
-**Webhook Ingestion**
-- `POST /webhooks/{provider_name}` - Receive and validate webhook
-
-**Admin Management**
-- `GET/POST /admin/providers` - Provider management
-- `GET /admin/webhooks` - List webhook events
-- `GET /admin/logs` - Security event logs
-- `GET /admin/logs/stats` - Security statistics
-
-**Analytics**
-- `GET /admin/analytics/webhooks` - Webhook analytics
-- `GET /admin/analytics/security` - Security analytics
-- `GET /admin/analytics/summary` - Summary statistics
-
-**Authentication**
-- `POST /auth/login` - User login
-- `POST /auth/register` - User registration
-- `GET /auth/me` - Current user info
-
-**Exports**
-- `GET /admin/logs/export/pdf` - Export security logs as PDF
-- `GET /admin/logs/export/csv` - Export security logs as CSV
-- `GET /admin/webhooks/export/pdf` - Export webhooks as PDF
-- `GET /admin/webhooks/export/csv` - Export webhooks as CSV
-- `GET /admin/dashboard/export/pdf` - Export dashboard as PDF
-
-## Performance & Scalability
-
-### Benchmarks
-- **Webhook Processing**: ~50-100ms per request (including validation, logging, analytics)
-- **Rate Limiting**: O(1) Redis operations, sub-millisecond latency
-- **Signature Verification**: ~5-10ms per webhook (HMAC-SHA256)
-- **Concurrent Connections**: Handles 1000+ concurrent webhooks
-- **Database**: Optimized queries with proper indexing
-
-### Optimization Techniques
-- **Async/Await**: Non-blocking I/O for high concurrency
-- **Connection Pooling**: Reuses database and Redis connections
-- **Caching**: Redis caching for frequently accessed data
-- **Batch Operations**: Efficient bulk analytics calculations
-- **Lazy Loading**: On-demand data loading in frontend
-
-## Deployment
-
-### Docker Deployment
-```bash
-# Build images
-docker-compose build
-
-# Start services
+# Start all services
 docker-compose up -d
 
 # View logs
@@ -442,167 +219,615 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### Environment Variables
-Create a `.env` file in the backend directory:
-```
+---
+
+## ⚙️ Configuration
+
+### Environment Variables (`.env`)
+
+```bash
+# Database
 DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/webshield
-REDIS_URL=redis://localhost:6379/0
-SECRET_KEY=your-secret-key-here
-ENVIRONMENT=development
+
+# Redis
+REDIS_URL=redis://localhost:6380
+
+# JWT
+SECRET_KEY=your-super-secret-key-min-32-characters
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# CORS
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
+
+# Rate Limiting
+RATE_LIMIT_PER_MINUTE=10
+RATE_LIMIT_RESET_SECONDS=60
+
+# Server
+HOST=0.0.0.0
+PORT=8000
+LOG_LEVEL=INFO
+
+# Frontend
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-### Production Considerations
-- Use environment-specific configurations
-- Enable HTTPS/TLS for all connections
-- Set up proper database backups
-- Configure Redis persistence
-- Use a reverse proxy (Nginx) for load balancing
-- Implement monitoring and alerting
-- Set up log aggregation
-- Use managed database services (AWS RDS, etc.)
+### Database Configuration
+The application uses PostgreSQL with SQLAlchemy async ORM. Migrations are managed with Alembic.
 
-## Security Best Practices
-
-1. **Constant-Time Comparison** - Prevents timing attacks on HMAC verification
-2. **Atomic Operations** - Redis Lua scripts prevent race conditions
-3. **Audit Trail** - All events logged for compliance
-4. **Rate Limiting** - Prevents DDoS attacks
-5. **Timestamp Validation** - Prevents old/future timestamp attacks
-6. **Payload Hashing** - Detects tampering
-7. **CSRF Protection** - Protects against cross-site attacks
-8. **Security Headers** - Adds protective HTTP headers
-9. **Password Hashing** - Uses bcrypt with salt
-10. **JWT Tokens** - Secure token-based authentication
-
-## Troubleshooting
-
-### Backend Issues
-
-**Database Connection Error**
-```
-Error: could not connect to server: Connection refused
-```
-Solution: Ensure PostgreSQL is running
 ```bash
-docker-compose up -d postgres
+# Create new migration
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
+alembic upgrade head
+
+# Rollback
+alembic downgrade -1
 ```
 
-**Redis Connection Error**
+---
+
+## 📖 Usage Guide
+
+### 🏨 Web Interface Access
+
+1. **Open Dashboard**: Navigate to `http://localhost:3000`
+2. **Create Account**: Sign up with email and password
+3. **Set Providers**: Add webhook providers to monitor
+4. **View Analytics**: Watch real-time events and statistics
+
+### 👤 User Roles
+
+- **Standard User**: Can manage own providers and webhooks
+- **Demo User**: Pre-configured with sample providers (demo/demo123)
+- **Attacker User**: Created for attack simulation testing
+
+### 🔑 Demo Login
 ```
-Error: Connection refused (Errno 111)
+Username: demo
+Password: demo123
 ```
-Solution: Ensure Redis is running
+
+This user comes pre-configured with sample providers and seed data.
+
+---
+
+## 🔧 Scripts & Commands
+
+### Backend Scripts
+
+#### 1️⃣ Attack Simulator
+Simulates 8 different attack scenarios against your webhook endpoints.
+
 ```bash
-docker-compose up -d redis
+cd backend
+
+# Run attack simulator
+python attack_simulator.py
 ```
 
-**Port Already in Use**
+**Output Example:**
 ```
-Error: Address already in use
+✅ ===============================================
+✅       ATTACK SIMULATOR - WebShield v1.0
+✅ ===============================================
+
+📝 Creating test attacker user...
+✅ VERIFIED LOGIN CREDENTIALS FOR ATTACKER ACCOUNT:
+   Username: attacker_1774424858
+   Email: attacker_1774424858@test.com
+   Password: Aa-0z#sqoFXcMAxk
+
+🎯 Running 8 Attack Scenarios...
+
+[1/8] ✅ Normal Event
+[2/8] ✅ Missing Signature Attack
+[3/8] ✅ Invalid Signature Attack
+[4/8] ✅ Large Payload Attack
+[5/8] ✅ Verbose Event Attack
+[6/8] ✅ Duplicate Event Attack
+[7/8] ✅ Delayed Event Attack
+[8/8] ✅ Malformed JSON Attack
+
+📊 Attack Summary:
+   Total: 8 | Success: 6 | Failed: 2
 ```
-Solution: Change port in docker-compose.yml or kill existing process
+
+**What it does:**
+- Creates a unique attacker user with timestamp-based name
+- Generates test providers
+- Simulates 8 different attack scenarios
+- Reports results and security metrics
+- Displays verified login credentials
+
+---
+
+#### 2️⃣ Demo User Setup
+Pre-configures demo account with sample providers.
+
 ```bash
-# Find process using port 8000
-lsof -i :8000
-# Kill process
-kill -9 <PID>
+cd backend
+
+# Create demo user with seed providers
+python create_demo_user.py
 ```
 
-### Frontend Issues
+**Credentials:**
+- Username: `demo`
+- Password: `demo123`
+- Pre-configured Providers: Yahoo Mail, Microsoft Graph, Slack
 
-**Module Not Found**
-```
-Error: Cannot find module 'next'
-```
-Solution: Install dependencies
+---
+
+#### 3️⃣ Seed Analytics Data
+Generates sample webhook events for testing analytics.
+
 ```bash
-cd frontend
-npm install
+cd backend
+
+python seed_analytics.py
 ```
 
-**Port 3000 Already in Use**
-```
-Error: listen EADDRINUSE: address already in use :::3000
-```
-Solution: Use different port
+---
+
+#### 4️⃣ Test Scripts (Diagnostic)
+
+##### Test Specific Credentials
 ```bash
-npm run dev -- -p 3001
+python test_specific_credentials.py
 ```
+
+##### Test All Logins
+```bash
+python test_all_logins.py
+```
+
+##### Test Password Hashing
+```bash
+python test_password.py
+```
+
+##### Diagnose Login Issues
+```bash
+python diagnose_login.py "username" "password"
+```
+
+---
+
+### Frontend Commands
+
+```bash
+# Development server
+npm run dev
+
+# Production build
+npm run build
+
+# Start production server
+npm run start
+
+# Linting
+npm run lint
+
+# Type checking
+npm run type-check
+
+# Format code
+npm run format
+```
+
+---
+
+## 🏛️ Project Structure
+
+```
+webshield/
+├── backend/                          # FastAPI Backend
+│   ├── app/
+│   │   ├── main.py                  # Application entry point
+│   │   ├── api/
+│   │   │   └── routes/              # API route handlers
+│   │   │       ├── auth.py          # Authentication endpoints
+│   │   │       ├── webhooks.py      # Webhook management
+│   │   │       ├── providers.py     # Provider configuration
+│   │   │       ├── websocket.py     # WebSocket endpoint
+│   │   │       ├── analytics.py     # Analytics endpoints
+│   │   │       └── logs.py          # Logging endpoints
+│   │   ├── core/                    # Core functionality
+│   │   │   ├── auth.py              # Authentication logic
+│   │   │   ├── security.py          # Security utilities
+│   │   │   ├── rate_limit.py        # Rate limiting
+│   │   │   ├── websocket_manager.py # WebSocket management
+│   │   │   ├── audit_logger.py      # Audit logging
+│   │   │   ├── payload_integrity.py # HMAC verification
+│   │   │   ├── security_headers.py  # Security headers
+│   │   │   ├── security_logger.py   # Security event logging
+│   │   │   └── alert_monitor.py     # Alert detection
+│   │   ├── db/
+│   │   │   ├── base.py              # Base configurations
+│   │   │   ├── session.py           # Database session
+│   │   │   └── models/              # SQLAlchemy models
+│   │   │       ├── user.py
+│   │   │       ├── provider.py
+│   │   │       ├── webhook.py
+│   │   │       ├── audit_log.py
+│   │   │       └── security_log.py
+│   │   └── schemas/                 # Pydantic schemas
+│   │       ├── user.py
+│   │       ├── provider.py
+│   │       ├── webhook.py
+│   │       └── alert.py
+│   ├── alembic/                     # Database migrations
+│   │   └── versions/                # Migration files
+│   ├── attack_simulator.py          # Attack simulation script
+│   ├── create_demo_user.py          # Demo user setup
+│   ├── seed_analytics.py            # Sample data generation
+│   ├── requirements.txt             # Python dependencies
+│   ├── .env.example                 # Environment template
+│   └── mypy.ini                     # Type checking config
+│
+├── frontend/                        # Next.js Frontend
+│   ├── src/
+│   │   ├── app/                    # App routes
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx            # Home page
+│   │   │   ├── login/              # Login page
+│   │   │   ├── signup/             # Signup page
+│   │   │   ├── dashboard/          # Main dashboard
+│   │   │   ├── admin/             # Admin pages
+│   │   │   ├── webhooks/          # Webhook pages
+│   │   │   ├── providers/         # Provider pages
+│   │   │   ├── security-logs/     # Security logs
+│   │   │   └── middleware.ts      # Auth middleware
+│   │   ├── components/
+│   │   │   ├── layout/            # Layout components
+│   │   │   └── ui/                # UI components
+│   │   ├── services/              # API services
+│   │   │   ├── api.ts             # Axios instance
+│   │   │   ├── auth.ts            # Auth service
+│   │   │   ├── webhooks.ts        # Webhook service
+│   │   │   ├── providers.ts       # Provider service
+│   │   │   └── export.ts          # Export service
+│   │   ├── hooks/                 # Custom hooks
+│   │   │   ├── useWebSocket.ts    # WebSocket hook
+│   │   │   ├── useProviders.ts    # Providers hook
+│   │   │   └── useWebhooks.ts     # Webhooks hook
+│   │   ├── store/                 # Zustand stores
+│   │   │   ├── useAuthStore.ts    # Auth state
+│   │   │   └── useNotificationStore.ts
+│   │   ├── config/
+│   │   │   ├── api.config.ts      # API configuration
+│   │   │   └── app.config.ts      # App configuration
+│   │   ├── types/                 # TypeScript types
+│   │   ├── utils/                 # Utility functions
+│   │   └── styles/                # Global styles
+│   ├── public/                    # Static assets
+│   ├── package.json               # Node dependencies
+│   ├── tsconfig.json              # TypeScript config
+│   ├── tailwind.config.js         # Tailwind config
+│   └── next.config.js             # Next.js config
+│
+├── docker-compose.yml             # Docker Compose config
+├── README.md                      # This file
+└── .gitignore
+```
+
+---
+
+## 🔐 Security Features
+
+### Authentication & Authorization
+- ✅ JWT-based stateless authentication
+- ✅ Bcrypt password hashing with Argon2
+- ✅ Token expiration after 60 minutes
+- ✅ Refresh token mechanism
+- ✅ Role-based access control (RBAC)
+
+### Attack Prevention
+- ✅ CSRF token validation on all POST/PUT/DELETE
+- ✅ Rate limiting (10 requests/minute per user)
+- ✅ SQL injection prevention (parameterized queries)
+- ✅ XSS protection (Content Security Policy headers)
+- ✅ CORS validation (whitelist-based)
+- ✅ HTTPS enforcement in production
+
+### Data Protection
+- ✅ Payload integrity verification (HMAC-SHA256)
+- ✅ Secure password storage (Argon2)
+- ✅ Encrypted sensitive data
+- ✅ Audit logging of all security events
+- ✅ PII handling compliance
+
+### Webhook Security
+- ✅ Signature verification
+- ✅ Timeout enforcement (30 seconds)
+- ✅ Payload size limits
+- ✅ Retry with exponential backoff
+- ✅ Dead letter queue for failed events
+
+---
+
+## 📊 Dashboard Features
+
+### 📈 Main Dashboard
+- **Real-time Statistics**: Live webhook event counts, success rates
+- **Activity Charts**: Time-series visualization of event patterns
+- **Recent Events**: Latest 100 webhook events with details
+- **Provider Summary**: Status and metrics for each provider
+- **Security Alerts**: Active threats and suspicious patterns
+- **Export to PDF**: Download dashboard snapshot
+
+### 👤 User Management
+- **Profile Settings**: Update username, email, password
+- **API Keys**: Generate and manage API tokens
+- **Login History**: View recent login activity
+- **Device Management**: Track active sessions
+
+### 🔌 Provider Management
+- **Add Providers**: Configure new webhook endpoints
+- **Edit Configuration**: Update provider settings
+- **Test Webhook**: Send test events
+- **View Metrics**: Provider-specific analytics
+- **Provider Analytics**: Success rates, latency, failures
+
+### 📡 Webhook Management
+- **View Events**: Inspect full webhook payloads
+- **Retry Failed**: Manually retry failed events
+- **Filter & Search**: Advanced filtering options
+- **Export Events**: Download event data
+- **Event Details**: Request/response headers and body
+
+### 🛡️ Security & Logs
+- **Security Logs**: All security-related events
+- **Audit Trail**: Complete activity history
+- **Threat Detection**: Suspicious pattern alerts
+- **Rate Limit Status**: Current limits and usage
+- **Login Attempts**: Failed and successful logins
+
+---
+
+## 🎯 Attack Simulator
+
+The attack simulator tests your webhook security with 8 scenarios:
+
+### 1. ✅ Normal Event
+- Valid signature
+- Proper payload
+- Expected headers
+- **Test**: Verifies baseline functionality
+
+### 2. 🔴 Missing Signature
+- No `X-Signature` header
+- **Test**: Ensures signature validation is required
+
+### 3. ⚠️ Invalid Signature
+- Tampered signature
+- **Test**: Detects signature mismatch
+
+### 4. 💥 Large Payload
+- 5MB+ payload
+- **Test**: Payload size limit enforcement
+
+### 5. 📢 Verbose Event
+- 100+ extra fields
+- **Test**: Handles unexpected fields gracefully
+
+### 6. 🔁 Duplicate Event
+- Same event ID sent twice
+- **Test**: Idempotency handling
+
+### 7. 🕐 Delayed Event
+- Timestamp 1 hour old
+- **Test**: Time-based validation
+
+### 8. 🧬 Malformed JSON
+- Invalid JSON structure
+- **Test**: Input validation robustness
+
+---
+
+## 📡 API Endpoints
+
+### Authentication
+```
+POST   /auth/register       # Create new account
+POST   /auth/login          # Authenticate user
+POST   /auth/logout         # End session
+GET    /auth/me             # Get current user
+POST   /auth/refresh        # Refresh token
+```
+
+### Webhooks
+```
+GET    /admin/webhooks              # List webhooks
+POST   /admin/webhooks              # Create webhook
+PUT    /admin/webhooks/{id}         # Update webhook
+DELETE /admin/webhooks/{id}         # Delete webhook
+GET    /admin/webhooks/stats        # Webhook statistics
+GET    /admin/webhooks/events       # Event history
+```
+
+### Providers
+```
+GET    /admin/providers             # List providers
+POST   /admin/providers             # Create provider
+PUT    /admin/providers/{id}        # Update provider
+DELETE /admin/providers/{id}        # Delete provider
+POST   /admin/providers/{id}/test   # Test provider
+```
+
+### Logs & Analytics
+```
+GET    /admin/logs                  # Security logs
+GET    /admin/logs/stats            # Log statistics
+GET    /admin/analytics/webhooks    # Webhook analytics
+GET    /admin/analytics/providers   # Provider analytics
+```
+
+### WebSocket
+```
+WS     /ws?token=<jwt>              # Real-time events
+```
+
+---
+
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-**Webhooks Not Being Received**
-- Check provider configuration
-- Verify secret key is correct
-- Check firewall/network settings
-- Review security logs for rejection reasons
+#### 1. WebSocket Connection Failed
+**Issue**: `WebSocket error: Connection refused`
 
-**Analytics Not Updating**
-- Ensure webhooks are being received
-- Check database connection
-- Verify Redis is running
-- Check application logs
+**Solution:**
+```bash
+# Check backend is running
+curl http://localhost:8000/health
 
-**Login Not Working**
-- Verify demo user exists: `python create_demo_user.py`
-- Check database connection
-- Clear browser cookies and try again
+# Verify token is valid
+# Check browser console for token details
 
-## FAQ
+# Restart backend
+cd backend && uvicorn app.main:app --reload
+```
 
-**Q: How do I add a new webhook provider?**
-A: Use the Providers page in the dashboard or POST to `/admin/providers` with provider name, secret key, and forwarding URL.
+#### 2. Login Failed (401 Unauthorized)
+**Issue**: Valid credentials but login fails
 
-**Q: Can I use WebShield with my existing webhook service?**
-A: Yes, configure the forwarding URL to point to your internal service. WebShield will validate and forward all webhooks.
+**Solution:**
+```bash
+# Check database connection
+python -c "from app.db.session import AsyncSessionLocal; print('DB OK')"
 
-**Q: How long are security logs retained?**
-A: By default, logs are retained indefinitely in the database. Configure retention policies based on your needs.
+# Verify user exists
+python check_users.py
 
-**Q: Can I export reports?**
-A: Yes, use the export buttons on each page to download PDF or CSV reports.
+# Test credentials directly
+python test_specific_credentials.py "username" "password"
+```
 
-**Q: How do I monitor webhook traffic in real-time?**
-A: The dashboard shows real-time analytics. Use WebSocket connections for live updates.
+#### 3. Database Connection Error
+**Issue**: `Could not connect to database`
 
-**Q: What happens if a webhook fails validation?**
-A: The webhook is rejected with appropriate HTTP status code and logged as a security event.
+**Solution:**
+```bash
+# Verify PostgreSQL is running
+psql -h localhost -U postgres -d webshield
 
-**Q: Can I configure custom rate limits?**
-A: Currently, rate limits are global (100 req/60s). Custom per-provider limits can be added in future versions.
+# Check connection string in .env
+cat .env | grep DATABASE_URL
 
-**Q: How do I backup my data?**
-A: Use PostgreSQL backup tools or configure automated backups with your database provider.
+# Run migrations
+alembic upgrade head
+```
 
-## Contributing
+#### 4. Redis Connection Error
+**Issue**: `Could not connect to Redis`
 
-Contributions are welcome! Please follow these guidelines:
+**Solution:**
+```bash
+# Check Redis is running
+redis-cli ping
+
+# Verify Redis URL in .env
+cat .env | grep REDIS_URL
+
+# Test connection
+python -c "import redis; r = redis.from_url('redis://localhost:6380'); print(r.ping())"
+```
+
+#### 5. CORS Error
+**Issue**: `Access to XMLHttpRequest blocked by CORS`
+
+**Solution:**
+```bash
+# Update .env
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
+
+# Restart backend
+```
+
+#### 6. Rate Limit Issues
+**Issue**: Getting 429 Too Many Requests
+
+**Solution:**
+```bash
+# Check Redis rate limit keys
+redis-cli KEYS "rate_limit:*"
+
+# Clear rate limits
+redis-cli FLUSHDB
+
+# Increase limit in .env
+RATE_LIMIT_PER_MINUTE=20
+```
+
+---
+
+## 📊 Performance Considerations
+
+### Database Optimization
+- Connection pooling: 5-20 connections
+- Query optimization with indexes
+- Async/await for non-blocking operations
+
+### Caching Strategy
+- Redis for rate limiting
+- Query result caching (1 hour TTL)
+- WebSocket message batching
+
+### Frontend Optimization
+- React Query for automatic caching
+- Code splitting with Next.js
+- Image optimization
+- Lazy loading of routes
+
+---
+
+## 🤝 Contributing
+
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+2. Create feature branch: `git checkout -b feature/amazing`
+3. Commit changes: `git commit -am 'Add feature'`
+4. Push to branch: `git push origin feature/amazing`
+5. Submit pull request
 
-## License
+---
 
-MIT License - See LICENSE file for details
+## 📄 License
 
-## Support
+This project is licensed under the MIT License - see LICENSE file for details.
+
+---
+
+## 📞 Support
 
 For issues, questions, or suggestions:
-- Open an issue on GitHub
-- Check existing documentation
-- Review test files for usage examples
 
-## Roadmap
+- 🐛 **Issues**: GitHub Issues
+- 💬 **Discussions**: GitHub Discussions
+- 📧 **Email**: support@webshield.dev
+- 📚 **Documentation**: Full docs at `/docs`
 
-- [ ] Custom per-provider rate limits
-- [ ] Webhook retry policies
-- [ ] Custom alert rules
-- [ ] Multi-tenant support
-- [ ] API key authentication
-- [ ] Webhook signing with RSA
-- [ ] Advanced filtering and search
-- [ ] Webhook transformation rules
-- [ ] Integration with external services
-- [ ] Mobile app
+---
+
+## 🎓 Learning Resources
+
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [WebSocket Guide](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
+- [OWASP Security Guide](https://owasp.org/www-project-web-security-testing-guide/)
+- [Webhook Best Practices](https://www.svix.com/resources/guides/webhook-security/)
+
+---
+
+## 🌟 Acknowledgments
+
+Built with ❤️ using FastAPI, Next.js, PostgreSQL, and Redis
+
+---
+
+**Last Updated**: March 25, 2026  
+**Version**: 1.0.0  
+**Status**: Production Ready ✅
