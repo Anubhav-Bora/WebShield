@@ -2,14 +2,16 @@
 Provider model - stores webhook provider configurations.
 
 Each provider (Stripe, GitHub, etc.) has:
-- A unique name
+- A unique name per user
 - A secret key for HMAC verification
 - A forwarding URL where validated webhooks are sent
 - Active/inactive status
+- Belongs to a user
 """
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, Index
+from sqlalchemy import String, Boolean, DateTime, Index, ForeignKey, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
@@ -19,24 +21,35 @@ class Provider(Base):
     Webhook provider configuration.
     
     Example providers: stripe, github, shopify
+    Each user can have their own set of providers.
     """
     __tablename__ = "providers"
     
     # Primary key - using UUID for better security (non-sequential IDs)
     id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique provider identifier"
     )
     
-    # Provider name - must be unique, used in webhook URLs
+    # Foreign key to user - each provider belongs to a user
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="User who owns this provider"
+    )
+    
+    # Provider name - must be unique globally, used in webhook URLs
     # Example: POST /webhooks/stripe
     name: Mapped[str] = mapped_column(
         String(100),
         unique=True,
         nullable=False,
         index=True,  # Indexed because we query by name on every webhook
-        comment="Provider name (e.g., 'stripe', 'github')"
+        comment="Provider name (e.g., 'stripe', 'stripe-account-2', 'github')"
     )
     
     # Secret key for HMAC signature verification

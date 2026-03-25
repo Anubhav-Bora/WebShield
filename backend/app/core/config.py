@@ -43,7 +43,7 @@ class Settings(BaseSettings):
         return self.JWT_ALGORITHM
     
     # Rate Limiting
-    RATE_LIMIT_MAX_REQUESTS: int = 100
+    RATE_LIMIT_MAX_REQUESTS: int = 10
     RATE_LIMIT_WINDOW_SECONDS: int = 60
     
     # Login Rate Limiting

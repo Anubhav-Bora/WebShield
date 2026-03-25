@@ -73,11 +73,12 @@ function Create-User {
             email = $TEST_USER_EMAIL
             password = $TEST_USER_PASSWORD
             username = "attacker_test"
+            full_name = "Attack Simulator"
         } | ConvertTo-Json
         
         # Login
         $loginResponse = Invoke-RestMethod -Uri "$BASE_URL/login" -Method Post -ContentType "application/json" -Body @{
-            email = $TEST_USER_EMAIL
+            username = "attacker_test"
             password = $TEST_USER_PASSWORD
         } | ConvertTo-Json
         
@@ -466,6 +467,20 @@ Write-Host "✓ Check the Security Logs dashboard to see all events" -Foreground
 Write-Host "✓ Each attack demonstrates a different security feature" -ForegroundColor Green
 Write-Host ""
 
-Write-Host "Dashboard URL: http://localhost:3000/security-logs" -ForegroundColor Cyan
-Write-Host "Webhooks Log: http://localhost:3000/webhooks/logs" -ForegroundColor Cyan
+Write-Host "LOGIN CREDENTIALS:" -ForegroundColor Yellow -BackgroundColor Black
+Write-Host "Username: attacker_test" -ForegroundColor Yellow
+Write-Host "Email: $TEST_USER_EMAIL" -ForegroundColor Yellow
+Write-Host "Password: $TEST_USER_PASSWORD" -ForegroundColor Yellow
+Write-Host ""
+
+Write-Host "DASHBOARD LINKS:" -ForegroundColor Cyan -BackgroundColor Black
+Write-Host "🔐 Login: http://localhost:3000/login" -ForegroundColor Cyan
+Write-Host "📊 Dashboard: http://localhost:3000/dashboard" -ForegroundColor Cyan
+Write-Host "🛡️  Security Logs: http://localhost:3000/security-logs" -ForegroundColor Cyan
+Write-Host "📨 Webhooks Log: http://localhost:3000/webhooks/logs" -ForegroundColor Cyan
+Write-Host ""
+
+Write-Host "PROVIDER DETAILS:" -ForegroundColor Green -BackgroundColor Black
+Write-Host "Provider Name: $TEST_PROVIDER_NAME" -ForegroundColor Green
+Write-Host "Secret Key: $TEST_SECRET_KEY" -ForegroundColor Green
 Write-Host ""

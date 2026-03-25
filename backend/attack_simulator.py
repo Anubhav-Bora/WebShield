@@ -3,7 +3,7 @@
 Attack Simulator Script - Demonstrates WebShield Security Features
 
 This script:
-1. Creates a test user and provider
+1. Creates a test attacker user and provider
 2. Executes various attack scenarios
 3. Shows real-time security logs on the dashboard
 
@@ -18,13 +18,33 @@ import hashlib
 import uuid
 from datetime import datetime, timedelta
 import time
+import redis.asyncio as redis
+import string
+import secrets
+
+# Database imports
+from app.db.session import AsyncSessionLocal
+from app.db.models.user import User
+from app.db.models.provider import Provider
+from app.core.auth import get_password_hash
+from sqlalchemy import select
 
 # Configuration
 BASE_URL = "http://localhost:8000"
-TEST_USER_EMAIL = "attacker@test.com"
-TEST_USER_PASSWORD = "TestPassword123!"
 TEST_PROVIDER_NAME = "attack-test-provider"
 TEST_SECRET_KEY = "super_secret_key_12345"
+CURRENT_PROVIDER_NAME = None  # Will be set after provider is created
+
+# Generate random credentials for attacker user
+def generate_password(length=16):
+    """Generate a random password with safe characters"""
+    # Use only safe characters that won't cause encoding issues
+    # Alphanumeric + common safe special chars
+    alphabet = string.ascii_letters + string.digits + "!@#$-_"
+    password = ''.join(secrets.choice(alphabet) for i in range(length))
+    return password
+
+ATTACKER_USER_PASSWORD = generate_password()
 
 # Colors for terminal output
 class Colors:
@@ -58,6 +78,7 @@ def print_info(message):
 
 def calculate_signature(payload: dict, secret: str) -> str:
     """Calculate HMAC-SHA256 signature"""
+    # Convert to JSON string with sorted keys (same as backend)
     payload_json = json.dumps(payload, sort_keys=True, separators=(',', ':'))
     signature = hmac.new(
         secret.encode(),
@@ -66,56 +87,87 @@ def calculate_signature(payload: dict, secret: str) -> str:
     ).hexdigest()
     return signature
 
-async def create_user(client: httpx.AsyncClient) -> str:
-    """Create a test user and return auth token"""
-    print_info(f"Creating user: {TEST_USER_EMAIL}")
+async def create_user(client: httpx.AsyncClient) -> tuple:
+    """Create a new attacker user and return auth token + credentials"""
+    # Create unique username and email based on timestamp
+    timestamp = int(datetime.now().timestamp())
+    attacker_username = f"attacker_{timestamp}"
+    attacker_email = f"attacker_{timestamp}@test.com"
     
-    response = await client.post(
-        f"{BASE_URL}/signup",
-        json={
-            "email": TEST_USER_EMAIL,
-            "password": TEST_USER_PASSWORD,
-            "username": "attacker_test"
-        }
-    )
+    print_info(f"Creating attacker user: {attacker_username}")
     
-    if response.status_code != 200:
-        print_error(f"Failed to create user: {response.text}")
-        return None
+    async with AsyncSessionLocal() as session:
+        # Create new user
+        attacker_user = User(
+            id=uuid.uuid4(),
+            email=attacker_email,
+            username=attacker_username,
+            full_name="Attack Simulator Attacker",
+            hashed_password=get_password_hash(ATTACKER_USER_PASSWORD),
+            is_active=True
+        )
+        session.add(attacker_user)
+        await session.commit()
+        print_success(f"Attacker user created: {attacker_username}")
     
-    # Login to get token
+    # Now login via HTTP to get token using the provided client
+    login_payload = {
+        "username": attacker_username,
+        "password": ATTACKER_USER_PASSWORD
+    }
+    print_info(f"Attempting login with username: {attacker_username}")
+    print_info(f"Password being used: {ATTACKER_USER_PASSWORD}")
+    print_info(f"Password length: {len(ATTACKER_USER_PASSWORD)}")
+    
     response = await client.post(
         f"{BASE_URL}/login",
-        json={
-            "email": TEST_USER_EMAIL,
-            "password": TEST_USER_PASSWORD
-        }
+        json=login_payload
     )
     
     if response.status_code != 200:
-        print_error(f"Failed to login: {response.text}")
-        return None
+        print_error(f"Failed to login (Status {response.status_code})")
+        print_error(f"Error response: {response.text}")
+        try:
+            error_detail = response.json().get("detail", response.text)
+            print_error(f"Error detail: {error_detail}")
+        except:
+            pass
+        print_error(f"The attacker user was created but login failed!")
+        print_error(f"Attacker username: {attacker_username}")
+        print_error(f"Attacker email: {attacker_email}")
+        print_error(f"Attacker password (that was attempted): {ATTACKER_USER_PASSWORD}")
+        print_error(f"Please check the backend logs for more details.")
+        return None, None, None, None
     
     token = response.json().get("access_token")
-    print_success(f"User created and logged in. Token: {token[:20]}...")
-    return token
+    print_success(f"Attacker logged in. Token: {token[:20]}...")
+    
+    # Return token and credentials
+    return token, attacker_username, attacker_email, ATTACKER_USER_PASSWORD
 
 async def create_provider(client: httpx.AsyncClient, token: str) -> dict:
-    """Create a test provider"""
-    print_info(f"Creating provider: {TEST_PROVIDER_NAME}")
+    """Create a test provider for the attacker user"""
+    global CURRENT_PROVIDER_NAME
+    
+    # Make provider name unique for this attacker
+    timestamp = int(datetime.now().timestamp())
+    provider_name = f"{TEST_PROVIDER_NAME}-{timestamp}"
+    CURRENT_PROVIDER_NAME = provider_name
+    
+    print_info(f"Creating provider: {provider_name}")
     
     response = await client.post(
         f"{BASE_URL}/admin/providers",
         headers={"Authorization": f"Bearer {token}"},
         json={
-            "name": TEST_PROVIDER_NAME,
+            "name": provider_name,
             "secret_key": TEST_SECRET_KEY,
             "forwarding_url": "http://localhost:9000/webhook",
             "is_active": True
         }
     )
     
-    if response.status_code != 200:
+    if response.status_code not in [200, 201]:
         print_error(f"Failed to create provider: {response.text}")
         return None
     
@@ -138,9 +190,12 @@ async def send_webhook(payload: dict, signature: str = None, timestamp: str = No
     
     async with httpx.AsyncClient() as client:
         try:
+            # Serialize payload with sorted keys for consistent signature
+            payload_json = json.dumps(payload, sort_keys=True, separators=(',', ':'))
+            
             response = await client.post(
-                f"{BASE_URL}/webhooks/{TEST_PROVIDER_NAME}",
-                json=payload,
+                f"{BASE_URL}/webhooks/{CURRENT_PROVIDER_NAME}",
+                content=payload_json,
                 headers=headers,
                 timeout=5.0
             )
@@ -228,14 +283,25 @@ async def attack_2_replay_attack():
     print_info(f"Response: {result2['body']}\n")
     await asyncio.sleep(1)
 
-async def attack_3_rate_limiting():
+async def attack_3_rate_limiting(provider_id: str = None):
     """Attack 3: Rate Limiting Bypass"""
     print_attack(
         "Rate Limiting Bypass",
         "Sending multiple webhooks rapidly to exceed rate limits"
     )
     
-    print_info("Sending 15 webhooks in rapid succession (limit is 10/minute)...\n")
+    # Clear rate limit from Redis before this attack
+    if provider_id:
+        try:
+            redis_client = await redis.from_url("redis://localhost:6379", encoding="utf-8", decode_responses=True)
+            rate_limit_key = f"rate_limit:{provider_id}"
+            await redis_client.delete(rate_limit_key)
+            print_info(f"Cleared rate limit counter for provider")
+            await redis_client.aclose()
+        except Exception as e:
+            print_info(f"Could not clear rate limit (Redis may not be available): {e}")
+    
+    print_info("Sending 15 webhooks in rapid succession ...\n")
     
     blocked_count = 0
     success_count = 0
@@ -358,7 +424,7 @@ async def attack_6_missing_headers():
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                f"{BASE_URL}/webhooks/{TEST_PROVIDER_NAME}",
+                f"{BASE_URL}/webhooks/{CURRENT_PROVIDER_NAME}",
                 json=payload,
                 headers={"Content-Type": "application/json"},
                 timeout=5.0
@@ -441,11 +507,11 @@ async def main():
     """Main execution"""
     print_header("WebShield Attack Simulator")
     
-    print(f"{Colors.YELLOW}This script demonstrates WebShield's security features by:"){Colors.ENDC}")
-    print(f"{Colors.YELLOW}1. Creating a test user and provider"){Colors.ENDC}")
-    print(f"{Colors.YELLOW}2. Executing 8 different attack scenarios"){Colors.ENDC}")
-    print(f"{Colors.YELLOW}3. Showing how each attack is blocked or detected"){Colors.ENDC}")
-    print(f"{Colors.YELLOW}4. Logging all events to the security dashboard\n"){Colors.ENDC}")
+    print(f"{Colors.YELLOW}This script demonstrates WebShield's security features by:{Colors.ENDC}")
+    print(f"{Colors.YELLOW}1. Creating a test user and provider{Colors.ENDC}")
+    print(f"{Colors.YELLOW}2. Executing 8 different attack scenarios{Colors.ENDC}")
+    print(f"{Colors.YELLOW}3. Showing how each attack is blocked or detected{Colors.ENDC}")
+    print(f"{Colors.YELLOW}4. Logging all events to the security dashboard{Colors.ENDC}\n")
     
     print(f"{Colors.BOLD}Open the dashboard at: http://localhost:3000{Colors.ENDC}")
     print(f"{Colors.BOLD}Navigate to: Security Logs to see attacks in real-time\n{Colors.ENDC}")
@@ -454,22 +520,28 @@ async def main():
     
     async with httpx.AsyncClient() as client:
         # Create user and provider
-        token = await create_user(client)
+        print_header("Setting Up Attacker Account")
+        token, attacker_username, attacker_email, attacker_password = await create_user(client)
         if not token:
-            print_error("Failed to create user. Exiting.")
+            print_error("FATAL: Failed to create user credentials. Cannot continue.")
+            print_error("The user was created in the database but login failed.")
+            print_error("Please check backend logs for authentication issues.")
             return
+        
+        print_success("Attacker account created and verified!")
         
         provider = await create_provider(client, token)
         if not provider:
-            print_error("Failed to create provider. Exiting.")
+            print_error("FATAL: Failed to create provider. Cannot continue.")
             return
         
+        print_success("Provider created successfully!")
         print_header("Starting Attack Scenarios")
         
         # Execute attacks
         await attack_1_invalid_signature()
         await attack_2_replay_attack()
-        await attack_3_rate_limiting()
+        await attack_3_rate_limiting(provider.get('id'))
         await attack_4_timestamp_tampering()
         await attack_5_payload_tampering()
         await attack_6_missing_headers()
@@ -483,8 +555,26 @@ async def main():
         print(f"{Colors.GREEN}✓ Check the Security Logs dashboard to see all events{Colors.ENDC}")
         print(f"{Colors.GREEN}✓ Each attack demonstrates a different security feature{Colors.ENDC}\n")
         
-        print(f"{Colors.CYAN}Dashboard URL: http://localhost:3000/security-logs{Colors.ENDC}")
-        print(f"{Colors.CYAN}Webhooks Log: http://localhost:3000/webhooks/logs\n{Colors.ENDC}")
+        print(f"{Colors.BOLD}{Colors.GREEN}✅ VERIFIED LOGIN CREDENTIALS FOR ATTACKER ACCOUNT:{Colors.ENDC}")
+        print(f"{Colors.BOLD}These credentials have been tested and confirmed to work!{Colors.ENDC}\n")
+        print(f"{Colors.YELLOW}Username: {attacker_username}{Colors.ENDC}")
+        print(f"{Colors.YELLOW}Email: {attacker_email}{Colors.ENDC}")
+        print(f"{Colors.YELLOW}Password: {attacker_password}{Colors.ENDC}")
+        print(f"{Colors.YELLOW}Paste these exactly as shown above{Colors.ENDC}\n")
+        
+        print(f"{Colors.BOLD}{Colors.CYAN}DASHBOARD LINKS:{Colors.ENDC}")
+        print(f"{Colors.CYAN}🔐 Login: http://localhost:3000/login{Colors.ENDC}")
+        print(f"{Colors.CYAN}📊 Dashboard: http://localhost:3000/dashboard{Colors.ENDC}")
+        print(f"{Colors.CYAN}🛡️  Security Logs: http://localhost:3000/security-logs{Colors.ENDC}")
+        print(f"{Colors.CYAN}📨 Webhooks Log: http://localhost:3000/webhooks/logs{Colors.ENDC}\n")
+        
+        print(f"{Colors.BOLD}{Colors.GREEN}PROVIDER DETAILS:{Colors.ENDC}")
+        print(f"{Colors.GREEN}Provider Name: {provider['name']}{Colors.ENDC}")
+        print(f"{Colors.GREEN}Secret Key: {TEST_SECRET_KEY}{Colors.ENDC}\n")
+        
+        print(f"{Colors.BOLD}{Colors.CYAN}DEMO ACCOUNT DETAILS (To see seed data):{Colors.ENDC}")
+        print(f"{Colors.CYAN}Username: demo{Colors.ENDC}")
+        print(f"{Colors.CYAN}Password: demo123{Colors.ENDC}\n")
 
 if __name__ == "__main__":
     asyncio.run(main())

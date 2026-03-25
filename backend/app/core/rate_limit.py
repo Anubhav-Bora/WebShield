@@ -5,6 +5,9 @@ Implements token bucket algorithm for rate limiting with atomic operations.
 """
 import redis.asyncio as redis
 from app.core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def check_rate_limit(
@@ -41,6 +44,7 @@ async def check_rate_limit(
     
     # Lua script for atomic rate limit check and increment
     # This prevents race conditions between check and set
+    # Uses a fixed window approach with proper TTL handling
     lua_script = """
     local key = KEYS[1]
     local max_requests = tonumber(ARGV[1])
@@ -49,14 +53,27 @@ async def check_rate_limit(
     local current = redis.call('GET', key)
     local current_count = current and tonumber(current) or 0
     
+    -- If we've already hit the limit, reject
     if current_count >= max_requests then
         local ttl = redis.call('TTL', key)
-        return {0, ttl > 0 and ttl or window_seconds}
+        -- TTL returns -1 if key exists but has no expiry, -2 if key doesn't exist
+        -- In both cases, use window_seconds as the reset time
+        local reset_time = ttl > 0 and ttl or window_seconds
+        return {0, reset_time}
     end
     
+    -- Increment counter
     local new_count = current_count + 1
-    redis.call('SETEX', key, window_seconds, new_count)
     
+    -- Always use SETEX to preserve the time window
+    -- If this is the first request (current_count==0), use full window_seconds
+    -- For subsequent requests, get remaining TTL and apply it
+    local ttl = redis.call('TTL', key)
+    local remaining_ttl = ttl > 0 and ttl or window_seconds
+    
+    redis.call('SETEX', key, remaining_ttl, new_count)
+    
+    -- Return: allowed=1, remaining_requests
     return {1, max_requests - new_count}
     """
     
@@ -70,8 +87,15 @@ async def check_rate_limit(
         )
         
         allowed = result[0] == 1
-        remaining = result[1] if allowed else 0
-        reset_at = result[1] if not allowed else window_seconds
+        
+        if allowed:
+            remaining = result[1]
+            reset_at = window_seconds
+            logger.info(f"✓ Rate limit check PASSED for {provider_id}: {remaining} requests remaining (limit: {max_requests})")
+        else:
+            remaining = 0
+            reset_at = result[1]
+            logger.warning(f"✗ Rate limit EXCEEDED for {provider_id}: reset in {reset_at}s (limit: {max_requests})")
         
         return allowed, {
             "remaining_requests": remaining,
@@ -81,8 +105,7 @@ async def check_rate_limit(
     except Exception as e:
         # If Redis fails, allow request but log error
         # This prevents Redis outage from blocking webhooks
-        import logging
-        logging.error(f"Rate limit check failed: {str(e)}")
+        logger.error(f"✗ Rate limit check FAILED: {str(e)}")
         return True, {
             "remaining_requests": max_requests,
             "reset_at": window_seconds,

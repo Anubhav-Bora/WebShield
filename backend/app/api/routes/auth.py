@@ -2,6 +2,7 @@
 Authentication routes - login, register, user management.
 """
 from datetime import datetime, timedelta
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -17,6 +18,8 @@ from app.core.auth import (
     get_current_active_user
 )
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -82,12 +85,32 @@ async def login(
     Returns a JWT access token that should be included in subsequent requests.
     """
     # Find user
+    logger.info(f"[AUTH/LOGIN] Login attempt for username: '{login_data.username}'")
+    logger.info(f"[AUTH/LOGIN] Password received: {len(login_data.password)} characters")
+    logger.info(f"[AUTH/LOGIN] Password value: '{login_data.password}'")
+    logger.info(f"[AUTH/LOGIN] Password bytes: {login_data.password.encode()}")
+    
     result = await db.execute(
         select(User).where(User.username == login_data.username)
     )
     user = result.scalar_one_or_none()
     
-    if not user or not verify_password(login_data.password, user.hashed_password):
+    if not user:
+        logger.warning(f"[AUTH/LOGIN] User '{login_data.username}' not found in database")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    logger.info(f"[AUTH/LOGIN] User found: {user.username}")
+    
+    # Verify password
+    is_password_valid = verify_password(login_data.password, user.hashed_password)
+    logger.info(f"[AUTH/LOGIN] Password valid: {is_password_valid}")
+    
+    if not is_password_valid:
+        logger.warning(f"[AUTH/LOGIN] Invalid password for user '{login_data.username}'")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -135,3 +158,54 @@ async def logout(current_user: User = Depends(get_current_active_user)):
     by removing the token. This endpoint is for logging purposes.
     """
     return {"message": "Successfully logged out"}
+
+
+# Alias endpoints for convenience
+@router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def signup(
+    user_data: UserCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Signup endpoint (alias for /auth/register).
+    
+    - **email**: Valid email address
+    - **username**: Unique username (3-100 characters)
+    - **full_name**: User's full name
+    - **password**: Password (min 8 characters)
+    """
+    # Check if user already exists
+    result = await db.execute(
+        select(User).where(
+            (User.email == user_data.email) | (User.username == user_data.username)
+        )
+    )
+    existing_user = result.scalar_one_or_none()
+    
+    if existing_user:
+        if existing_user.email == user_data.email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken"
+            )
+    
+    # Create new user
+    hashed_password = get_password_hash(user_data.password)
+    new_user = User(
+        email=user_data.email,
+        username=user_data.username,
+        full_name=user_data.full_name,
+        hashed_password=hashed_password,
+        is_active=True
+    )
+    
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    
+    return new_user

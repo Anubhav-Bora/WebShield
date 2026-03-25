@@ -18,7 +18,7 @@ class WebSocketManager:
     
     async def connect(self, websocket: WebSocket, user_id: str):
         """Register a new WebSocket connection."""
-        await websocket.accept()
+        # Note: websocket.accept() is already called in the endpoint before reaching here
         self.active_connections.append(websocket)
         
         if user_id not in self.user_connections:

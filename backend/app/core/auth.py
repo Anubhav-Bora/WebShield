@@ -103,3 +103,37 @@ async def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+async def verify_token(token: str, db: AsyncSession = Depends(get_db)) -> Optional[User]:
+    """
+    Verify a JWT token and return the associated user.
+    
+    Used for WebSocket authentication where we can't use the standard
+    HTTPBearer dependency injection.
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: str = payload.get("sub")
+        
+        if user_id is None:
+            return None
+            
+    except JWTError:
+        return None
+    
+    # Get user from database
+    try:
+        from uuid import UUID
+        user_uuid = UUID(user_id)
+        result = await db.execute(
+            select(User).where(User.id == user_uuid)
+        )
+        user = result.scalar_one_or_none()
+        
+        if user and user.is_active:
+            return user
+    except (ValueError, TypeError):
+        pass
+    
+    return None

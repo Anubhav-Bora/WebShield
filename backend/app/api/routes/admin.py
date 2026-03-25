@@ -8,6 +8,7 @@ import uuid
 from typing import List
 
 from app.db.session import get_db
+from app.db.models.user import User
 from app.db.models.provider import Provider
 from app.db.models.webhook_event import WebhookEvent
 from app.db.models.security_log import SecurityLog
@@ -15,15 +16,19 @@ from app.schemas.provider import ProviderCreate, ProviderUpdate, ProviderRespons
 from app.schemas.webhook import WebhookEventResponse
 from app.schemas.security_log import SecurityLogResponse
 from app.core.config import settings
+from app.core.auth import get_current_user
 
 
 router = APIRouter()
 
 
 @router.get("/providers", response_model=List[ProviderResponse])
-async def list_providers(db: AsyncSession = Depends(get_db)):
-    """List all webhook providers."""
-    stmt = select(Provider)
+async def list_providers(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List all webhook providers for the current user."""
+    stmt = select(Provider).where(Provider.user_id == current_user.id)
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -31,21 +36,23 @@ async def list_providers(db: AsyncSession = Depends(get_db)):
 @router.post("/providers", response_model=ProviderResponse, status_code=status.HTTP_201_CREATED)
 async def create_provider(
     provider_data: ProviderCreate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    """Create a new webhook provider."""
-    # Check if provider already exists
+    """Create a new webhook provider for the current user."""
+    # Check if provider already exists globally (name must be unique)
     stmt = select(Provider).where(Provider.name == provider_data.name)
     result = await db.execute(stmt)
     if result.scalars().first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Provider '{provider_data.name}' already exists"
+            detail=f"Provider name '{provider_data.name}' is already taken. Choose a different name."
         )
     
     # Create new provider
     provider = Provider(
         id=uuid.uuid4(),
+        user_id=current_user.id,
         name=provider_data.name,
         secret_key=provider_data.secret_key,
         forwarding_url=provider_data.forwarding_url,
@@ -62,10 +69,14 @@ async def create_provider(
 @router.get("/providers/{provider_name}", response_model=ProviderResponse)
 async def get_provider(
     provider_name: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    """Get provider by name."""
-    stmt = select(Provider).where(Provider.name == provider_name)
+    """Get provider by name for the current user."""
+    stmt = select(Provider).where(
+        (Provider.user_id == current_user.id) & 
+        (Provider.name == provider_name)
+    )
     result = await db.execute(stmt)
     provider = result.scalars().first()
     
@@ -82,10 +93,14 @@ async def get_provider(
 async def update_provider(
     provider_name: str,
     provider_data: ProviderUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    """Update a provider."""
-    stmt = select(Provider).where(Provider.name == provider_name)
+    """Update a provider for the current user."""
+    stmt = select(Provider).where(
+        (Provider.user_id == current_user.id) & 
+        (Provider.name == provider_name)
+    )
     result = await db.execute(stmt)
     provider = result.scalars().first()
     
@@ -112,10 +127,14 @@ async def update_provider(
 @router.delete("/providers/{provider_name}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_provider(
     provider_name: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    """Delete a provider."""
-    stmt = select(Provider).where(Provider.name == provider_name)
+    """Delete a provider for the current user."""
+    stmt = select(Provider).where(
+        (Provider.user_id == current_user.id) & 
+        (Provider.name == provider_name)
+    )
     result = await db.execute(stmt)
     provider = result.scalars().first()
     
@@ -125,7 +144,10 @@ async def delete_provider(
             detail=f"Provider '{provider_name}' not found"
         )
     
-    stmt = delete(Provider).where(Provider.name == provider_name)
+    stmt = delete(Provider).where(
+        (Provider.user_id == current_user.id) & 
+        (Provider.name == provider_name)
+    )
     await db.execute(stmt)
     await db.commit()
 
