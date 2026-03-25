@@ -310,37 +310,107 @@ python attack_simulator.py
 
 **Output Example:**
 ```
-✅ ===============================================
-✅       ATTACK SIMULATOR - WebShield v1.0
-✅ ===============================================
+======================================================================
+                     Setting Up Attacker Account
+======================================================================
 
-📝 Creating test attacker user...
+ℹ Creating attacker user: attacker_1774427547
+✓ Attacker user created: attacker_1774427547
+ℹ Attempting login with username: attacker_1774427547
+ℹ Password being used: _n5jsbvyS1mORX0f
+ℹ Password length: 16
+✓ Attacker logged in. Token: eyJhbGciOiJIUzI1NiIs...
+✓ Attacker account created and verified!
+ℹ Creating provider: attack-test-provider-1774427549
+✓ Provider created: 76eeaf42-e70b-41e8-b9a6-923f381517ed
+✓ Provider created successfully!
+
+======================================================================
+                      Starting Attack Scenarios
+======================================================================
+
+🔥 ATTACK: Invalid Signature
+   Sending webhook with tampered signature to bypass HMAC verification
+
+ℹ Correct signature: 283fdd9a76ea9e11...
+ℹ Tampered signature: 0000000000000000...
+✓ ATTACK BLOCKED - Invalid signature rejected
+ℹ Response: {'detail': 'Invalid webhook signature'}
+
+🔥 ATTACK: Replay Attack
+   Resending the same webhook multiple times to bypass replay protection
+
+ℹ Sending webhook with request_id: 6ea1b850-343d-4da8-af0c-c63f37c7b0a6
+ℹ First attempt: {'status': 'accepted', 'message': 'Webhook received and queued...'}
+ℹ Replaying the same request...
+✓ ATTACK BLOCKED - Replay attempt detected and rejected
+ℹ Response: {'detail': 'Webhook already processed (replay detected)'}
+
+🔥 ATTACK: Rate Limiting Bypass
+   Sending multiple webhooks rapidly to exceed rate limits
+
+ℹ Cleared rate limit counter for provider
+ℹ Sending 15 webhooks in rapid succession...
+
+ℹ   Request 1: ✓ Accepted
+ℹ   Request 2: ✓ Accepted
+ℹ   Request 3: ✓ Accepted
+ℹ   Request 4: ✓ Accepted
+ℹ   Request 5: ✓ Accepted
+ℹ   Request 6: ✓ Accepted
+ℹ   Request 7: ✓ Accepted
+✗   Request 8: ✗ Blocked - Rate limit exceeded. Reset in 47 seconds
+✗   Request 9: ✗ Blocked - Rate limit exceeded. Reset in 46 seconds
+... (8 requests blocked)
+
+✓ ATTACK BLOCKED - Rate limiting enforced (8 requests blocked)
+ℹ Accepted: 7, Blocked: 8
+
+🔥 ATTACK: Timestamp Tampering
+🔥 ATTACK: Payload Tampering
+🔥 ATTACK: Missing Security Headers
+🔥 ATTACK: Future Timestamp
+🔥 ATTACK: Valid Webhook
+
+======================================================================
+                      Attack Simulation Complete
+======================================================================
+
+Summary:
+✓ All attacks were executed and logged
+✓ Check the Security Logs dashboard to see all events
+✓ Each attack demonstrates a different security feature
+
 ✅ VERIFIED LOGIN CREDENTIALS FOR ATTACKER ACCOUNT:
-   Username: attacker_1774424858
-   Email: attacker_1774424858@test.com
-   Password: Aa-0z#sqoFXcMAxk
+These credentials have been tested and confirmed to work!
 
-🎯 Running 8 Attack Scenarios...
+Username: attacker_1774427547
+Email: attacker_1774427547@test.com
+Password: _n5jsbvyS1mORX0f
+Paste these exactly as shown above
 
-[1/8] ✅ Normal Event
-[2/8] ✅ Missing Signature Attack
-[3/8] ✅ Invalid Signature Attack
-[4/8] ✅ Large Payload Attack
-[5/8] ✅ Verbose Event Attack
-[6/8] ✅ Duplicate Event Attack
-[7/8] ✅ Delayed Event Attack
-[8/8] ✅ Malformed JSON Attack
+DASHBOARD LINKS:
+🔐 Login: http://localhost:3000/login
+📊 Dashboard: http://localhost:3000/dashboard
+🛡️  Security Logs: http://localhost:3000/security-logs
+📨 Webhooks Log: http://localhost:3000/webhooks/logs
 
-📊 Attack Summary:
-   Total: 8 | Success: 6 | Failed: 2
+PROVIDER DETAILS:
+Provider Name: attack-test-provider-1774427549
+Secret Key: super_secret_key_12345
+
+DEMO ACCOUNT DETAILS (To see seed data):
+Username: demo
+Password: demo123
 ```
 
 **What it does:**
-- Creates a unique attacker user with timestamp-based name
-- Generates test providers
-- Simulates 8 different attack scenarios
-- Reports results and security metrics
-- Displays verified login credentials
+- Creates a unique attacker user with verified login credentials
+- Generates test providers with realistic configurations
+- Executes 8 different attack scenarios demonstrating security features
+- Shows real-time attack blocking and detection
+- Displays all credentials and dashboard links for immediate access
+- Reports detailed attack results and metrics
 
 ---
 
@@ -592,39 +662,53 @@ webshield/
 
 The attack simulator tests your webhook security with 8 scenarios:
 
-### 1. ✅ Normal Event
-- Valid signature
-- Proper payload
-- Expected headers
-- **Test**: Verifies baseline functionality
+### 1. ✅ Invalid Signature
+- Tampered signature (`X-Signature` header)
+- **Test**: Ensures HMAC-SHA256 signature validation
+- **Expected**: `Invalid webhook signature` rejection
 
-### 2. 🔴 Missing Signature
-- No `X-Signature` header
-- **Test**: Ensures signature validation is required
+### 2. 🔴 Replay Attack
+- Same webhook sent twice with identical request ID
+- **Test**: Replay detection and idempotency
+- **Expected**: `Webhook already processed (replay detected)`
 
-### 3. ⚠️ Invalid Signature
-- Tampered signature
-- **Test**: Detects signature mismatch
+### 3. ⚠️ Rate Limiting Bypass
+- 15 rapid webhook requests
+- **Test**: Rate limit enforcement (10 requests/minute)
+- **Expected**: After 7 requests, remaining blocked with countdown
 
-### 4. 💥 Large Payload
-- 5MB+ payload
-- **Test**: Payload size limit enforcement
+### 4. 💥 Timestamp Tampering
+- Webhook timestamp 10 minutes old
+- **Test**: Timestamp validation window
+- **Expected**: Old timestamp rejected
 
-### 5. 📢 Verbose Event
-- 100+ extra fields
-- **Test**: Handles unexpected fields gracefully
+### 5. 📢 Payload Tampering
+- Signature for original payload, but modified payload sent
+- **Test**: Payload integrity verification
+- **Expected**: Modified payload detected and rejected
 
-### 6. 🔁 Duplicate Event
-- Same event ID sent twice
-- **Test**: Idempotency handling
+### 6. 🔁 Missing Security Headers
+- Webhook missing `X-Signature` or `X-Timestamp`
+- **Test**: Required header validation
+- **Expected**: Missing headers rejected
 
-### 7. 🕐 Delayed Event
-- Timestamp 1 hour old
-- **Test**: Time-based validation
+### 7. 🕐 Future Timestamp
+- Webhook timestamp 1 hour in the future
+- **Test**: Time-based validation bounds
+- **Expected**: Future timestamp rejected
 
-### 8. 🧬 Malformed JSON
-- Invalid JSON structure
-- **Test**: Input validation robustness
+### 8. 🧬 Valid Webhook
+- Properly signed webhook with valid headers
+- **Test**: Baseline functionality verification
+- **Expected**: Webhook accepted and processed
+
+**Run Attack Simulator:**
+```bash
+cd backend
+python attack_simulator.py
+```
+
+The simulator creates a test attacker user, provider, and executes all 8 scenarios in sequence, displaying detailed output for each attack and its results.
 
 ---
 
