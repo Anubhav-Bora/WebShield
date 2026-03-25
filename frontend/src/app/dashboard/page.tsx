@@ -5,6 +5,7 @@ import gsap from 'gsap'
 import { useProviders } from '@/hooks/useProviders'
 import { useWebhookStats, useWebhookEvents } from '@/hooks/useWebhooks'
 import { useSecurityStats } from '@/hooks/useSecurityLogs'
+import useWebSocket from '@/hooks/useWebSocket'
 import { StatCard } from '@/components/ui/StatCard'
 import { StatCardSkeleton } from '@/components/ui/StatCardSkeleton'
 import { AnimatedChart } from '@/components/ui/AnimatedChart'
@@ -24,6 +25,9 @@ export default function DashboardPage() {
     React.useEffect(() => {
         setIsHydrated(true)
     }, [])
+
+    // Connect to WebSocket for real-time updates
+    const { isConnected } = useWebSocket()
 
     // Fetch data - React Query handles caching automatically
     // Use isFetching to show loading during background refetches
@@ -164,6 +168,12 @@ export default function DashboardPage() {
                         </h1>
                         <p className="page-subtitle text-slate-400 text-sm flex items-center gap-2">
                             Hey Admin— Here's what's happening with your gateway today
+                            {isConnected && (
+                                <span className="ml-2 inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 text-emerald-400 text-xs rounded-full border border-emerald-500/20">
+                                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                                    Live
+                                </span>
+                            )}
                         </p>
                     </div>
                     <button

@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { formatDateTime, formatEventType, formatIPAddress } from '@/utils/formatters'
 import { useSecurityLogs } from '@/hooks/useSecurityLogs'
+import useWebSocket from '@/hooks/useWebSocket'
 import gsap from 'gsap'
 import { Download, FileText, ChevronDown, ChevronUp, AlertTriangle, Globe, Clock } from 'lucide-react'
 import { exportSecurityLogsPDF, exportSecurityLogsCSV } from '@/services/export'
@@ -11,6 +12,7 @@ import { useNotificationStore } from '@/store/useNotificationStore'
 
 export default function SecurityLogsPage() {
     const { data: logs, isLoading, error } = useSecurityLogs()
+    const { isConnected } = useWebSocket()
     const { success, error: showError } = useNotificationStore()
     const [expandedId, setExpandedId] = useState<string | null>(null)
 
@@ -55,7 +57,15 @@ export default function SecurityLogsPage() {
                     <div className="flex justify-between items-start gap-6">
                         <div>
                             <h1 className="text-5xl font-black text-white mb-3">Security Logs</h1>
-                            <p className="text-slate-400 text-lg">Monitor and analyze security events in real-time</p>
+                            <p className="text-slate-400 text-lg flex items-center gap-2">
+                                Monitor and analyze security events in real-time
+                                {isConnected && (
+                                    <span className="ml-2 inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 text-emerald-400 text-xs rounded-full border border-emerald-500/20">
+                                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                                        Live
+                                    </span>
+                                )}
+                            </p>
                         </div>
                         <div className="flex gap-3 flex-shrink-0">
                             <button

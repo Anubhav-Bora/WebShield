@@ -250,10 +250,23 @@ async def receive_webhook(
     
     # Calculate analytics for this hour
     from app.core.analytics_calculator import calculate_webhook_analytics_for_hour
+    from app.core.websocket_manager import ws_manager
     try:
         await calculate_webhook_analytics_for_hour(db, provider.id, datetime.utcnow())
     except Exception as e:
         logger.error(f"Failed to calculate analytics: {str(e)}")
+    
+    # Broadcast webhook event via WebSocket to all connected users
+    await ws_manager.broadcast_to_all({
+        "type": "webhook_event",
+        "data": {
+            "webhook_id": str(webhook_event.id),
+            "provider_name": provider.name,
+            "status": "received",
+            "timestamp": datetime.utcnow().isoformat(),
+            "request_id": webhook_event.request_id
+        }
+    })
     
     # Forward webhook to internal service (async, don't wait)
     # Pass webhook data instead of session to avoid session closure issues

@@ -389,7 +389,6 @@ async def get_security_log(
 
 
 @router.get("/logs/export/csv")
-@router.get("/logs/export/csv")
 async def export_security_logs_csv(
     event_type: str = Query(None),
     provider_name: str = Query(None),

@@ -16,6 +16,7 @@ from app.api.routes.admin import router as admin_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.analytics import router as analytics_router
 from app.api.routes.webhooks_advanced import router as webhooks_advanced_router
+from app.api.routes.websocket import router as websocket_router
 
 # Setup logging
 setup_logging()
@@ -134,6 +135,12 @@ app.include_router(
     webhooks_advanced_router,
     prefix="/admin",
     tags=["Webhooks Advanced"]
+)
+
+# Include websocket routes
+app.include_router(
+    websocket_router,
+    tags=["WebSocket"]
 )
 
 @app.get("/health", tags=["Health"])

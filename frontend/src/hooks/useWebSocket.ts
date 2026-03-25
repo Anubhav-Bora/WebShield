@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 export interface WebSocketEvent {
     type: 'webhook_event' | 'stats_update' | 'security_event' | 'alert' | 'connection' | 'echo'
     data: any
-    timestamp: string | number
+    timestamp?: string
 }
 
 export const useWebSocket = (onEvent?: (event: WebSocketEvent) => void) => {
@@ -28,6 +28,7 @@ export const useWebSocket = (onEvent?: (event: WebSocketEvent) => void) => {
         }
 
         if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+            showError('WebSocket Error', 'Max reconnection attempts reached')
             return
         }
 
@@ -41,8 +42,6 @@ export const useWebSocket = (onEvent?: (event: WebSocketEvent) => void) => {
 
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
             const host = window.location.host
-            // Note: WebSocket doesn't support custom headers in browsers, so token is passed as query param
-            // In production, use secure WebSocket (wss://) to encrypt the token in transit
             const wsUrl = `${protocol}//${host}/ws?token=${encodeURIComponent(token)}`
 
             wsRef.current = new WebSocket(wsUrl)
@@ -58,6 +57,7 @@ export const useWebSocket = (onEvent?: (event: WebSocketEvent) => void) => {
                 clearTimeout(connectionTimeout)
                 setIsConnected(true)
                 reconnectAttemptsRef.current = 0
+                console.log('✓ WebSocket connected')
             }
 
             wsRef.current.onmessage = (event) => {
@@ -67,14 +67,17 @@ export const useWebSocket = (onEvent?: (event: WebSocketEvent) => void) => {
                     // Handle different event types
                     switch (message.type) {
                         case 'connection':
+                            console.log('WebSocket connection established')
                             break
 
                         case 'echo':
                             break
 
                         case 'webhook_event':
+                            // Invalidate webhook queries to refresh data
                             queryClient.invalidateQueries({ queryKey: ['webhooks'] })
-                            warning('Webhook Event', `New webhook ${message.data.status}: ${message.data.provider_name}`)
+                            queryClient.invalidateQueries({ queryKey: ['webhookAnalytics'] })
+                            console.log('📨 Webhook event received:', message.data)
                             break
 
                         case 'stats_update':
@@ -99,23 +102,26 @@ export const useWebSocket = (onEvent?: (event: WebSocketEvent) => void) => {
                         onEvent(message)
                     }
                 } catch (err) {
-                    // Error parsing message
+                    console.error('Error parsing WebSocket message:', err)
                 }
             }
 
             wsRef.current.onerror = () => {
                 clearTimeout(connectionTimeout)
                 setIsConnected(false)
+                console.error('WebSocket error')
             }
 
             wsRef.current.onclose = () => {
                 clearTimeout(connectionTimeout)
                 setIsConnected(false)
+                console.log('WebSocket closed')
 
                 // Attempt to reconnect with exponential backoff
                 if (reconnectAttemptsRef.current < maxReconnectAttempts) {
                     const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000)
                     reconnectAttemptsRef.current += 1
+                    console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current})`)
                     reconnectTimeoutRef.current = setTimeout(() => {
                         connect()
                     }, delay)
@@ -123,6 +129,7 @@ export const useWebSocket = (onEvent?: (event: WebSocketEvent) => void) => {
             }
         } catch (err) {
             setIsConnected(false)
+            console.error('WebSocket connection error:', err)
         }
     }, [queryClient, onEvent, warning, showError])
 
