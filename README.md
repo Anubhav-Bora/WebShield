@@ -879,23 +879,6 @@ RATE_LIMIT_PER_MINUTE=20
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see LICENSE file for details.
-
----
-
-## 📞 Support
-
-For issues, questions, or suggestions:
-
-- 🐛 **Issues**: GitHub Issues
-- 💬 **Discussions**: GitHub Discussions
-- 📧 **Email**: support@webshield.dev
-- 📚 **Documentation**: Full docs at `/docs`
-
----
-
 ## 🎓 Learning Resources
 
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
@@ -905,13 +888,6 @@ For issues, questions, or suggestions:
 - [Webhook Best Practices](https://www.svix.com/resources/guides/webhook-security/)
 
 ---
-
-## 🌟 Acknowledgments
-
-Built with ❤️ using FastAPI, Next.js, PostgreSQL, and Redis
-
----
-
 **Last Updated**: March 25, 2026  
 **Version**: 1.0.0  
 **Status**: Production Ready ✅
